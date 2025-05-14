@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: e1f171dabc863534f9e11fe9eef530d1
+guid: a26c8af1252544c4da747449dc54db2c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2344264231129395918
-    second: kid_0
+      213: 6423811416348648462
+    second: Clair Portrait_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: kid_0
+      name: Clair Portrait_0
       rect:
         serializedVersion: 2
-        x: 82
-        y: 36
-        width: 940
-        height: 983
+        x: 0
+        y: 0
+        width: 1024
+        height: 1024
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ec23f14d5ef788020800000000000000
-      internalID: 2344264231129395918
+      spriteID: e046f87c276f52950800000000000000
+      internalID: 6423811416348648462
       vertices: []
       indices: 
       edges: []

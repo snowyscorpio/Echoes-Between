@@ -7,7 +7,6 @@ public class DatabaseManager : MonoBehaviour
 {
     private static DatabaseManager instance;
     private string dbPath;
-    private IDbConnection dbConnection;
 
     public static DatabaseManager Instance
     {
@@ -50,36 +49,12 @@ public class DatabaseManager : MonoBehaviour
         }
 
         dbPath = "URI=file:" + persistentPath;
-        OpenConnection();
     }
 
-    private void OpenConnection()
+    public IDbConnection GetConnection()
     {
-        dbConnection = new SqliteConnection(dbPath);
-        dbConnection.Open();
-        Debug.Log("Database connection opened.");
-    }
-
-    public IDbCommand CreateCommand(string query)
-    {
-        if (dbConnection == null)
-        {
-            Debug.LogError("Database connection is not open!");
-            return null;
-        }
-
-        IDbCommand command = dbConnection.CreateCommand();
-        command.CommandText = query;
-        return command;
-    }
-
-    private void OnApplicationQuit()
-    {
-        if (dbConnection != null)
-        {
-            dbConnection.Close();
-            dbConnection = null;
-            Debug.Log("Database connection closed.");
-        }
+        IDbConnection connection = new SqliteConnection(dbPath);
+        connection.Open();
+        return connection;
     }
 }
