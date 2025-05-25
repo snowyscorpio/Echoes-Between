@@ -17,13 +17,13 @@ public class DialogueManager : MonoBehaviour
     {
         currentCharacters = new List<Character>();
 
-        if (GameManager.Instance == null || GameManager.Instance.currentLevel == null)
+        if (GameManager.Instance == null || GameManager.Instance.CurrentLevelID <= 0)
         {
             Debug.LogWarning("No current level loaded.");
             return;
         }
 
-        int currentLevelID = GameManager.Instance.currentLevel.levelID;
+        int currentLevelID = GameManager.Instance.CurrentLevelID;
         var all = Character.LoadAllCharacters();
 
         foreach (var character in all)

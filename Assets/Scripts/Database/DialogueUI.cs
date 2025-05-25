@@ -1,12 +1,17 @@
+
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
 
 public class DialogueUI : MonoBehaviour
 {
     public TMP_Text characterNameText;
     public TMP_Text dialogueText;
     public Image characterPortraitImage;
+
+    private List<string> currentSentences;
+    private int sentenceIndex = 0;
 
     public void ShowCharacter(Character character)
     {
@@ -15,7 +20,14 @@ public class DialogueUI : MonoBehaviour
         characterNameText.text = character.characterName;
 
         var sentences = Sentence.LoadByProviderID(character.characterID);
-        dialogueText.text = sentences.Count > 0 ? sentences[0].sentence : "[No dialogue]";
+        currentSentences = new List<string>();
+        foreach (var s in sentences)
+        {
+            currentSentences.Add(s.sentence);
+        }
+
+        sentenceIndex = 0;
+        ShowSentence();
 
         var portrait = Resources.Load<Sprite>(character.characterAppearance);
         if (portrait != null)
@@ -29,4 +41,35 @@ public class DialogueUI : MonoBehaviour
             characterPortraitImage.enabled = false;
         }
     }
+
+    public void ShowSentence()
+    {
+        if (currentSentences == null || currentSentences.Count == 0)
+        {
+            dialogueText.text = "[No dialogue]";
+            return;
+        }
+
+        if (sentenceIndex >= 0 && sentenceIndex < currentSentences.Count)
+        {
+            dialogueText.text = currentSentences[sentenceIndex];
+        }
+    }
+
+    public void ShowNextSentence()
+    {
+        if (currentSentences == null || currentSentences.Count == 0) return;
+
+        sentenceIndex = (sentenceIndex + 1) % currentSentences.Count;
+        ShowSentence();
+    }
+
+    public void ShowPreviousSentence()
+    {
+        if (currentSentences == null || currentSentences.Count == 0) return;
+
+        sentenceIndex = (sentenceIndex - 1 + currentSentences.Count) % currentSentences.Count;
+        ShowSentence();
+    }
+
 }

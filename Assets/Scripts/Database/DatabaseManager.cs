@@ -57,4 +57,71 @@ public class DatabaseManager : MonoBehaviour
         connection.Open();
         return connection;
     }
+
+    public DataTable GetAllSessions()
+    {
+        using (IDbConnection connection = GetConnection())
+        {
+            IDbCommand command = connection.CreateCommand();
+            command.CommandText = "SELECT * FROM Sessions";
+            IDataReader reader = command.ExecuteReader();
+
+            DataTable table = new DataTable();
+            table.Load(reader);
+            return table;
+        }
+    }
+
+    public void AddSession(string name)
+    {
+        using (IDbConnection connection = GetConnection())
+        {
+            IDbCommand command = connection.CreateCommand();
+            command.CommandText = "INSERT INTO Sessions (sessionName, dateOfLastSave) VALUES (@name, datetime('now'))";
+
+            var nameParam = command.CreateParameter();
+            nameParam.ParameterName = "@name";
+            nameParam.Value = name;
+            command.Parameters.Add(nameParam);
+
+            command.ExecuteNonQuery();
+        }
+    }
+
+    public void DeleteSession(int sessionId)
+    {
+        using (IDbConnection connection = GetConnection())
+        {
+            IDbCommand command = connection.CreateCommand();
+            command.CommandText = "DELETE FROM Sessions WHERE sessionID = @id";
+
+            var idParam = command.CreateParameter();
+            idParam.ParameterName = "@id";
+            idParam.Value = sessionId;
+            command.Parameters.Add(idParam);
+
+            command.ExecuteNonQuery();
+        }
+    }
+
+    public void UpdateSession(int sessionId, string newName)
+    {
+        using (IDbConnection connection = GetConnection())
+        {
+            IDbCommand command = connection.CreateCommand();
+            command.CommandText = "UPDATE Sessions SET sessionName = @name WHERE sessionID = @id";
+
+            var nameParam = command.CreateParameter();
+            nameParam.ParameterName = "@name";
+            nameParam.Value = newName;
+            command.Parameters.Add(nameParam);
+
+            var idParam = command.CreateParameter();
+            idParam.ParameterName = "@id";
+            idParam.Value = sessionId;
+            command.Parameters.Add(idParam);
+
+            command.ExecuteNonQuery();
+        }
+    }
 }
