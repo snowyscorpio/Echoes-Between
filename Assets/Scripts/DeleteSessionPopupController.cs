@@ -2,14 +2,8 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 
-public class SessionPopupController : MonoBehaviour
+public class DeleteSessionPopupController : MonoBehaviour
 {
-    [Header("Add Session Popup")]
-    public GameObject addSessionPanel;
-    public TMP_InputField sessionNameInput;
-    public Button confirmAddButton;
-    public Button cancelAddButton;
-
     [Header("Delete Confirmation Popup")]
     public GameObject confirmDeletePanel;
     public Button confirmDeleteButton;
@@ -25,11 +19,7 @@ public class SessionPopupController : MonoBehaviour
 
     void Start()
     {
-        addSessionPanel.SetActive(false);
         confirmDeletePanel.SetActive(false);
-
-        confirmAddButton.onClick.AddListener(OnConfirmAdd);
-        cancelAddButton.onClick.AddListener(() => addSessionPanel.SetActive(false));
 
         confirmDeleteButton.onClick.AddListener(OnConfirmDelete);
         cancelDeleteButton.onClick.AddListener(() => confirmDeletePanel.SetActive(false));
@@ -37,22 +27,6 @@ public class SessionPopupController : MonoBehaviour
         deleteSessionButton.interactable = false;
         selectSessionButton.onClick.AddListener(ToggleSelectionMode);
         deleteSessionButton.onClick.AddListener(ShowDeleteConfirmation);
-    }
-
-    public void ShowAddSessionPopup()
-    {
-        sessionNameInput.text = "";
-        addSessionPanel.SetActive(true);
-    }
-
-    private void OnConfirmAdd()
-    {
-        string sessionName = sessionNameInput.text.Trim();
-        if (!string.IsNullOrEmpty(sessionName))
-        {
-            sessionListController.AddSessionFromPopup(sessionName);
-        }
-        addSessionPanel.SetActive(false);
     }
 
     public void ToggleSelectionMode()
@@ -68,7 +42,7 @@ public class SessionPopupController : MonoBehaviour
         }
     }
 
-    private void ShowDeleteConfirmation()
+    public void ShowDeleteConfirmation()
     {
         if (selectionMode && sessionListController.HasSelectedSessions())
         {

@@ -7,28 +7,31 @@ using UnityEngine.SceneManagement;
 
 public class SessionListController : MonoBehaviour
 {
+    [Header("UI References")]
     public GameObject sessionItemPrefab;
     public Transform contentPanel;
-    public TMP_InputField inputField;
     public Button addButton;
     public Button deleteButton;
-    public Button selectButton; 
+    public Button selectButton;
+
+    [Header("Popup Controllers")]
+    public AddSessionPopupController addSessionPopupController;
+    public DeleteSessionPopupController deleteSessionPopupController;
 
     private List<SessionItemUI> sessionItems = new List<SessionItemUI>();
 
     void Start()
     {
         RefreshSessionList();
-        addButton.onClick.AddListener(AddNewSession);
-        deleteButton.onClick.AddListener(DeleteSelectedSessions);
+
+        if (addButton != null)
+            addButton.onClick.AddListener(() => addSessionPopupController.ShowAddSessionPopup());
 
         if (selectButton != null)
-        {
-            selectButton.onClick.AddListener(() =>
-            {
-                FindFirstObjectByType<SessionPopupController>()?.ToggleSelectionMode();
-            });
-        }
+            selectButton.onClick.AddListener(() => deleteSessionPopupController.ToggleSelectionMode());
+
+        if (deleteButton != null)
+            deleteButton.onClick.AddListener(() => deleteSessionPopupController.ShowDeleteConfirmation());
     }
 
     public void RefreshSessionList()
@@ -48,17 +51,6 @@ public class SessionListController : MonoBehaviour
             itemUI.Setup((int)(long)row["sessionID"], row["sessionName"].ToString());
             itemUI.OnSessionDoubleClick = LoadSession;
             sessionItems.Add(itemUI);
-        }
-    }
-
-    public void AddNewSession()
-    {
-        string sessionName = inputField.text.Trim();
-        if (!string.IsNullOrEmpty(sessionName))
-        {
-            DatabaseManager.Instance.AddSession(sessionName);
-            inputField.text = "";
-            RefreshSessionList();
         }
     }
 

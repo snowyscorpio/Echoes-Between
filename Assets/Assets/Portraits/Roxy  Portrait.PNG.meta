@@ -147,7 +147,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Roxy  Portrait_0: 6626825048702598567
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
