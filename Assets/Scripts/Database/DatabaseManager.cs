@@ -1,7 +1,7 @@
-using System.IO;
+﻿using System.IO;
 using UnityEngine;
-using Mono.Data.Sqlite;
 using System.Data;
+using System.Data.SQLite;
 
 public class DatabaseManager : MonoBehaviour
 {
@@ -29,31 +29,20 @@ public class DatabaseManager : MonoBehaviour
 
     private void InitializeDatabase()
     {
-        string persistentPath = Path.Combine(Application.persistentDataPath, "GameDatabase.db");
+        string fullPath = Path.Combine(Application.streamingAssetsPath, "GameDatabase.db");
 
-        if (!File.Exists(persistentPath))
+        if (!File.Exists(fullPath))
         {
-            Debug.Log("Database not found in PersistentDataPath. Copying from Resources...");
-            TextAsset dbAsset = Resources.Load<TextAsset>("GameDatabase");
-
-            if (dbAsset != null)
-            {
-                File.WriteAllBytes(persistentPath, dbAsset.bytes);
-                Debug.Log("Database copied successfully.");
-            }
-            else
-            {
-                Debug.LogError("GameDatabase.db not found in Resources!");
-                return;
-            }
+            Debug.LogError("GameDatabase.db not found in StreamingAssets! Path: " + fullPath);
+            return;
         }
 
-        dbPath = "URI=file:" + persistentPath;
+        dbPath = "Data Source=" + fullPath + ";Version=3;";
     }
 
     public IDbConnection GetConnection()
     {
-        IDbConnection connection = new SqliteConnection(dbPath);
+        IDbConnection connection = new SQLiteConnection(dbPath);
         connection.Open();
         return connection;
     }

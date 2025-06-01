@@ -36,9 +36,9 @@ public class DeleteSessionPopupController : MonoBehaviour
 
         foreach (var item in sessionListController.GetAllSessionItems())
         {
-            item.SetToggleVisible(selectionMode);
+            item.SetSelectionVisible(selectionMode); 
             if (!selectionMode)
-                item.SetToggleState(false);
+                item.SetSelected(false);              
         }
     }
 
@@ -46,7 +46,6 @@ public class DeleteSessionPopupController : MonoBehaviour
     {
         if (selectionMode && sessionListController.HasSelectedSessions())
         {
-            deleteConfirmationText.text = "Are you sure you want to delete the selected session(s)?";
             confirmDeletePanel.SetActive(true);
         }
     }

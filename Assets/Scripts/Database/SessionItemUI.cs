@@ -6,7 +6,7 @@ using System;
 
 public class SessionItemUI : MonoBehaviour, IPointerClickHandler
 {
-    public TextMeshProUGUI sessionNameText;
+    public Button sessionNameButton; 
     public Toggle selectionToggle;
 
     public int SessionId { get; private set; }
@@ -19,9 +19,17 @@ public class SessionItemUI : MonoBehaviour, IPointerClickHandler
     public void Setup(int sessionId, string sessionName)
     {
         SessionId = sessionId;
-        sessionNameText.text = sessionName;
-        selectionToggle.isOn = false;
-        selectionToggle.gameObject.SetActive(false); // מוסתר כברירת מחדל
+
+
+        TextMeshProUGUI text = sessionNameButton.GetComponentInChildren<TextMeshProUGUI>();
+        if (text != null)
+            text.text = sessionName;
+
+        if (selectionToggle != null)
+        {
+            selectionToggle.isOn = false;
+            selectionToggle.gameObject.SetActive(false); 
+        }
     }
 
     public bool IsSelected()
@@ -29,14 +37,16 @@ public class SessionItemUI : MonoBehaviour, IPointerClickHandler
         return selectionToggle != null && selectionToggle.isOn;
     }
 
-    public void SetToggleVisible(bool visible)
+    public void SetSelectionVisible(bool visible)
     {
-        selectionToggle.gameObject.SetActive(visible);
+        if (selectionToggle != null)
+            selectionToggle.gameObject.SetActive(visible);
     }
 
-    public void SetToggleState(bool state)
+    public void SetSelected(bool state)
     {
-        selectionToggle.isOn = state;
+        if (selectionToggle != null)
+            selectionToggle.isOn = state;
     }
 
     public void OnPointerClick(PointerEventData eventData)

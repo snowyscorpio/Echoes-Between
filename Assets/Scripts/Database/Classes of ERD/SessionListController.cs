@@ -20,22 +20,41 @@ public class SessionListController : MonoBehaviour
 
     private List<SessionItemUI> sessionItems = new List<SessionItemUI>();
 
+    private bool selectionMode = false; 
+
     void Start()
     {
+        Debug.Log("SessionListController: Start");
+
+        if (DatabaseManager.Instance == null || GameManager.Instance == null)
+        {
+            Debug.LogError("Missing managers");
+            return;
+        }
+
         RefreshSessionList();
 
         if (addButton != null)
             addButton.onClick.AddListener(() => addSessionPopupController.ShowAddSessionPopup());
 
         if (selectButton != null)
-            selectButton.onClick.AddListener(() => deleteSessionPopupController.ToggleSelectionMode());
+            selectButton.onClick.AddListener(ToggleSelectionMode); 
 
         if (deleteButton != null)
-            deleteButton.onClick.AddListener(() => deleteSessionPopupController.ShowDeleteConfirmation());
+        {
+            deleteButton.onClick.AddListener(DeleteSelectedSessions);
+            deleteButton.interactable = false; 
+        }
     }
 
     public void RefreshSessionList()
     {
+        if (DatabaseManager.Instance == null)
+        {
+            Debug.LogError(" Cannot refresh: DatabaseManager is null.");
+            return;
+        }
+
         foreach (Transform child in contentPanel)
         {
             Destroy(child.gameObject);
@@ -44,24 +63,40 @@ public class SessionListController : MonoBehaviour
         sessionItems.Clear();
         DataTable sessions = DatabaseManager.Instance.GetAllSessions();
 
-        foreach (DataRow row in sessions.Rows)
+        for (int i = sessions.Rows.Count - 1; i >= 0; i--) 
         {
+            DataRow row = sessions.Rows[i];
             GameObject itemObj = Instantiate(sessionItemPrefab, contentPanel);
             SessionItemUI itemUI = itemObj.GetComponent<SessionItemUI>();
             itemUI.Setup((int)(long)row["sessionID"], row["sessionName"].ToString());
             itemUI.OnSessionDoubleClick = LoadSession;
+            itemUI.SetSelectionVisible(selectionMode); 
             sessionItems.Add(itemUI);
         }
+
+        deleteButton.interactable = selectionMode && HasSelectedSessions(); 
     }
 
     public void AddSessionFromPopup(string sessionName)
     {
+        if (DatabaseManager.Instance == null)
+        {
+            Debug.LogError(" Cannot add session: DatabaseManager is null.");
+            return;
+        }
+
         DatabaseManager.Instance.AddSession(sessionName);
         RefreshSessionList();
     }
 
     public void DeleteSelectedSessions()
     {
+        if (DatabaseManager.Instance == null)
+        {
+            Debug.LogError(" Cannot delete sessions: DatabaseManager is null.");
+            return;
+        }
+
         foreach (var item in sessionItems)
         {
             if (item.IsSelected())
@@ -69,6 +104,7 @@ public class SessionListController : MonoBehaviour
                 DatabaseManager.Instance.DeleteSession(item.SessionId);
             }
         }
+
         RefreshSessionList();
     }
 
@@ -82,9 +118,27 @@ public class SessionListController : MonoBehaviour
         return sessionItems;
     }
 
+    private void ToggleSelectionMode() 
+    {
+        selectionMode = !selectionMode;
+
+        foreach (var item in sessionItems)
+        {
+            item.SetSelectionVisible(selectionMode);
+            if (!selectionMode)
+                item.SetSelected(false);
+        }
+
+        deleteButton.interactable = selectionMode && HasSelectedSessions();
+    }
+
     void LoadSession(int sessionId)
     {
-        Debug.Log("Loading session with ID: " + sessionId);
+        if (DatabaseManager.Instance == null || GameManager.Instance == null)
+        {
+            Debug.LogError(" Cannot load session – missing DatabaseManager or GameManager");
+            return;
+        }
 
         using (IDbConnection connection = DatabaseManager.Instance.GetConnection())
         {
@@ -101,29 +155,26 @@ public class SessionListController : MonoBehaviour
                 if (reader.Read())
                 {
                     int levelID = reader.GetInt32(0);
-                    string position = reader.GetString(1);
+                    string position = reader.IsDBNull(1) ? "0,0" : reader.GetString(1);
                     int difficulty = reader.GetInt32(2);
 
-                    Debug.Log($"Session {sessionId} will load level {levelID}, position {position}, difficulty {difficulty}");
-
-                    GameManager.Instance.CurrentSessionID = sessionId;
-                    GameManager.Instance.PendingStartPosition = position;
-                    GameManager.Instance.CurrentLevelID = levelID;
-                    GameManager.Instance.LevelDifficulty = difficulty;
-
+                    ApplySessionToGameManager(sessionId, levelID, position, difficulty);
                     SceneManager.LoadScene("Level_" + levelID);
                 }
                 else
                 {
-                    Debug.LogWarning("No saved level found for this session. Starting from level 1.");
-                    GameManager.Instance.CurrentSessionID = sessionId;
-                    GameManager.Instance.PendingStartPosition = "0,0";
-                    GameManager.Instance.CurrentLevelID = 1;
-                    GameManager.Instance.LevelDifficulty = 1;
-
+                    ApplySessionToGameManager(sessionId, 1, "0,0", 1);
                     SceneManager.LoadScene("Level_1");
                 }
             }
+        }
+
+        void ApplySessionToGameManager(int sessionId, int levelID, string position, int difficulty)
+        {
+            GameManager.Instance.CurrentSessionID = sessionId;
+            GameManager.Instance.PendingStartPosition = position;
+            GameManager.Instance.CurrentLevelID = levelID;
+            GameManager.Instance.LevelDifficulty = difficulty;
         }
     }
 }

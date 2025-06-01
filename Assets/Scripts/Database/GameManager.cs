@@ -1,8 +1,23 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager Instance { get; private set; }
+    private static GameManager instance;
+
+    public static GameManager Instance
+    {
+        get
+        {
+            if (instance == null)
+            {
+                GameObject go = new GameObject("GameManager");
+                instance = go.AddComponent<GameManager>();
+                DontDestroyOnLoad(go);
+            }
+            return instance;
+        }
+    }
 
     public int CurrentSessionID { get; set; }
     public int CurrentLevelID { get; set; }
@@ -11,13 +26,17 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
+        Debug.Log("GameManager: Awake");
+
+        if (instance == null)
         {
-            Instance = this;
+            instance = this;
             DontDestroyOnLoad(gameObject);
+            Debug.Log("GameManager initialized");
         }
-        else
+        else if (instance != this)
         {
+            Debug.LogWarning("Duplicate GameManager destroyed");
             Destroy(gameObject);
         }
     }
@@ -42,5 +61,19 @@ public class GameManager : MonoBehaviour
         PendingStartPosition = null;
         CurrentLevelID = 0;
         LevelDifficulty = 0;
+    }
+
+    public void LoadNextLevel()
+    {
+        if (CurrentLevelID >= 3)
+        {
+            SceneManager.LoadScene("LastLevel");
+        }
+        else
+        {
+            int nextLevel = CurrentLevelID + 1;
+            CurrentLevelID = nextLevel;
+            SceneManager.LoadScene("Level_" + nextLevel);
+        }
     }
 }
