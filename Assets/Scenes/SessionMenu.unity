@@ -310,8 +310,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0.00022507}
-  m_SizeDelta: {x: 24.885, y: 7.9255}
+  m_AnchoredPosition: {x: 0.8785, y: -1.1472}
+  m_SizeDelta: {x: 15.2399, y: 6.3479}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &291050656
 MonoBehaviour:
@@ -325,13 +325,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8be3c52345cd183479721f2384f5a596, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sessionItemPrefab: {fileID: 7429813478049481540, guid: 35eb26a4f88084441add6ce6c5cde043, type: 3}
+  sessionItemPrefab: {fileID: 1597166551721200826, guid: 8d82c6a1634de1148bb9481342cd6d65, type: 3}
   contentPanel: {fileID: 670903640}
   addButton: {fileID: 1717466954}
   deleteButton: {fileID: 2028192531}
   selectButton: {fileID: 1556727190}
   addSessionPopupController: {fileID: 516665828}
-  deleteSessionPopupController: {fileID: 1517660814}
+  deleteSessionPopupController: {fileID: 0}
+  deleteSessionButtonController: {fileID: 2028192534}
 --- !u!1 &302147047
 GameObject:
   m_ObjectHideFlags: 0
@@ -851,11 +852,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1684157646}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -0.000030517578, y: 0.00024414062}
   m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0, y: 1}
+  m_Pivot: {x: 0.5, y: 0.94}
 --- !u!114 &670903641
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -883,12 +884,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Padding:
-    m_Left: 0
+    m_Left: 75
     m_Right: 0
-    m_Top: 0
+    m_Top: 5
     m_Bottom: 0
-  m_ChildAlignment: 1
-  m_Spacing: 10
+  m_ChildAlignment: 0
+  m_Spacing: 35
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 1
@@ -2102,7 +2103,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1825960246}
   m_HandleRect: {fileID: 1825960245}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -2944,13 +2945,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29ee96ef44a2a274dafeaeb7e95d4f02, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  confirmDeletePanel: {fileID: 1517660810}
+  deleteConfirmationText: {fileID: 1367051935}
   confirmDeleteButton: {fileID: 1677784519}
   cancelDeleteButton: {fileID: 1024618959}
-  deleteConfirmationText: {fileID: 1367051935}
   sessionListController: {fileID: 291050656}
-  deleteSessionButton: {fileID: 2028192531}
-  selectSessionButton: {fileID: 1556727190}
 --- !u!1 &1539233200
 GameObject:
   m_ObjectHideFlags: 0
@@ -3424,8 +3422,8 @@ Transform:
   m_GameObject: {fileID: 1634430375}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.0632, y: 0.0157, z: 0}
-  m_LocalScale: {x: 3.6652598, y: 2.5623837, z: 1}
+  m_LocalPosition: {x: 0.03, y: 0.0157, z: 0}
+  m_LocalScale: {x: 3.7740774, y: 2.5623837, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 223015541}
@@ -3683,7 +3681,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5.5
+  orthographic size: 5
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -3708,7 +3706,7 @@ Transform:
   m_GameObject: {fileID: 1671946402}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0, y: 0.23, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4329,7 +4327,7 @@ RectTransform:
   m_GameObject: {fileID: 1883407575}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.65279996, y: 1.13, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1598798847}
@@ -4338,7 +4336,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 20, y: 0}
+  m_SizeDelta: {x: 13.48, y: 0}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &1883407577
 MonoBehaviour:
@@ -4465,8 +4463,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 20.82, y: -39.15}
-  m_SizeDelta: {x: 401.92, y: 132.36}
+  m_AnchoredPosition: {x: 22.83, y: -40.66}
+  m_SizeDelta: {x: 405.93, y: 135.38}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2017944554
 MonoBehaviour:
@@ -4481,7 +4479,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Content: {fileID: 670903640}
-  m_Horizontal: 1
+  m_Horizontal: 0
   m_Vertical: 1
   m_MovementType: 1
   m_Elasticity: 0.1
@@ -4548,6 +4546,7 @@ GameObject:
   - component: {fileID: 2028192533}
   - component: {fileID: 2028192532}
   - component: {fileID: 2028192531}
+  - component: {fileID: 2028192534}
   m_Layer: 5
   m_Name: 'DELETE_SESSION_Button '
   m_TagString: Untagged
@@ -4657,6 +4656,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2028192529}
   m_CullTransparentMesh: 1
+--- !u!114 &2028192534
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2028192529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98b81ef6230424146bc04f5975835afb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  deleteSessionButton: {fileID: 2028192531}
+  deleteButtonText: {fileID: 1589913121}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

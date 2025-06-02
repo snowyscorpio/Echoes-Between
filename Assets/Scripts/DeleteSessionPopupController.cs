@@ -4,55 +4,43 @@ using UnityEngine.UI;
 
 public class DeleteSessionPopupController : MonoBehaviour
 {
-    [Header("Delete Confirmation Popup")]
-    public GameObject confirmDeletePanel;
+    [Header("UI Elements")]
+    public TMP_Text deleteConfirmationText;
     public Button confirmDeleteButton;
     public Button cancelDeleteButton;
-    public TMP_Text deleteConfirmationText;
 
-    [Header("Control References")]
+    [Header("Control Reference")]
     public SessionListController sessionListController;
-    public Button deleteSessionButton;
-    public Button selectSessionButton;
-
-    private bool selectionMode = false;
 
     void Start()
     {
-        confirmDeletePanel.SetActive(false);
+        gameObject.SetActive(false);
 
-        confirmDeleteButton.onClick.AddListener(OnConfirmDelete);
-        cancelDeleteButton.onClick.AddListener(() => confirmDeletePanel.SetActive(false));
+        if (confirmDeleteButton != null)
+            confirmDeleteButton.onClick.AddListener(OnConfirmDelete);
 
-        deleteSessionButton.interactable = false;
-        selectSessionButton.onClick.AddListener(ToggleSelectionMode);
-        deleteSessionButton.onClick.AddListener(ShowDeleteConfirmation);
+        if (cancelDeleteButton != null)
+            cancelDeleteButton.onClick.AddListener(() =>
+            {
+                gameObject.SetActive(false);
+            });
     }
 
-    public void ToggleSelectionMode()
+    public void ShowDeleteSessionPopup()
     {
-        selectionMode = !selectionMode;
-        deleteSessionButton.interactable = selectionMode;
-
-        foreach (var item in sessionListController.GetAllSessionItems())
+        if (sessionListController != null && sessionListController.HasSelectedSessions())
         {
-            item.SetSelectionVisible(selectionMode); 
-            if (!selectionMode)
-                item.SetSelected(false);              
-        }
-    }
-
-    public void ShowDeleteConfirmation()
-    {
-        if (selectionMode && sessionListController.HasSelectedSessions())
-        {
-            confirmDeletePanel.SetActive(true);
+            if (deleteConfirmationText != null)
+                deleteConfirmationText.text = "ARE YOU SURE YOU\nWANT TO DELETE ?";
+            gameObject.SetActive(true);
         }
     }
 
     private void OnConfirmDelete()
     {
-        sessionListController.DeleteSelectedSessions();
-        confirmDeletePanel.SetActive(false);
+        if (sessionListController != null)
+            sessionListController.DeleteSelectedSessions();
+
+        gameObject.SetActive(false);
     }
 }

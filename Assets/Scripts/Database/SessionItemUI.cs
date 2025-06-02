@@ -6,10 +6,12 @@ using System;
 
 public class SessionItemUI : MonoBehaviour, IPointerClickHandler
 {
-    public Button sessionNameButton; 
+    public Button sessionNameButton;
     public Toggle selectionToggle;
 
     public int SessionId { get; private set; }
+
+    private SessionListController parentListController;
 
     private float lastClickTime = 0f;
     private const float doubleClickThreshold = 0.3f;
@@ -20,7 +22,6 @@ public class SessionItemUI : MonoBehaviour, IPointerClickHandler
     {
         SessionId = sessionId;
 
-
         TextMeshProUGUI text = sessionNameButton.GetComponentInChildren<TextMeshProUGUI>();
         if (text != null)
             text.text = sessionName;
@@ -28,8 +29,30 @@ public class SessionItemUI : MonoBehaviour, IPointerClickHandler
         if (selectionToggle != null)
         {
             selectionToggle.isOn = false;
-            selectionToggle.gameObject.SetActive(false); 
+            selectionToggle.gameObject.SetActive(false);
+            selectionToggle.onValueChanged.RemoveAllListeners();
+            selectionToggle.onValueChanged.AddListener(OnToggleValueChanged);
         }
+
+        if (sessionNameButton != null)
+        {
+            sessionNameButton.onClick.RemoveAllListeners();
+            sessionNameButton.onClick.AddListener(OnSessionTriggerClicked);
+        }
+    }
+
+    private void OnSessionTriggerClicked()
+    {
+        if (selectionToggle != null)
+        {
+            selectionToggle.isOn = !selectionToggle.isOn;
+            OnToggleValueChanged(selectionToggle.isOn);
+        }
+    }
+
+    private void OnToggleValueChanged(bool isOn)
+    {
+        parentListController?.HandleSessionToggleChanged();
     }
 
     public bool IsSelected()
@@ -59,5 +82,10 @@ public class SessionItemUI : MonoBehaviour, IPointerClickHandler
         }
 
         lastClickTime = Time.time;
+    }
+
+    public void SetParentListController(SessionListController controller)
+    {
+        parentListController = controller;
     }
 }

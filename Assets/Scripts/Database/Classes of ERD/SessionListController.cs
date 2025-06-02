@@ -18,14 +18,14 @@ public class SessionListController : MonoBehaviour
     public AddSessionPopupController addSessionPopupController;
     public DeleteSessionPopupController deleteSessionPopupController;
 
-    private List<SessionItemUI> sessionItems = new List<SessionItemUI>();
+    [Header("Other Controllers")]
+    public DeleteSessionButtonController deleteSessionButtonController;
 
-    private bool selectionMode = false; 
+    private List<SessionItemUI> sessionItems = new List<SessionItemUI>();
+    private bool selectionMode = false;
 
     void Start()
     {
-        Debug.Log("SessionListController: Start");
-
         if (DatabaseManager.Instance == null || GameManager.Instance == null)
         {
             Debug.LogError("Missing managers");
@@ -38,12 +38,12 @@ public class SessionListController : MonoBehaviour
             addButton.onClick.AddListener(() => addSessionPopupController.ShowAddSessionPopup());
 
         if (selectButton != null)
-            selectButton.onClick.AddListener(ToggleSelectionMode); 
+            selectButton.onClick.AddListener(ToggleSelectionMode);
 
         if (deleteButton != null)
         {
-            deleteButton.onClick.AddListener(DeleteSelectedSessions);
-            deleteButton.interactable = false; 
+
+            deleteButton.interactable = false;
         }
     }
 
@@ -63,18 +63,19 @@ public class SessionListController : MonoBehaviour
         sessionItems.Clear();
         DataTable sessions = DatabaseManager.Instance.GetAllSessions();
 
-        for (int i = sessions.Rows.Count - 1; i >= 0; i--) 
+        for (int i = sessions.Rows.Count - 1; i >= 0; i--)
         {
             DataRow row = sessions.Rows[i];
             GameObject itemObj = Instantiate(sessionItemPrefab, contentPanel);
             SessionItemUI itemUI = itemObj.GetComponent<SessionItemUI>();
             itemUI.Setup((int)(long)row["sessionID"], row["sessionName"].ToString());
+            itemUI.SetParentListController(this);
             itemUI.OnSessionDoubleClick = LoadSession;
-            itemUI.SetSelectionVisible(selectionMode); 
+            itemUI.SetSelectionVisible(selectionMode);
             sessionItems.Add(itemUI);
         }
 
-        deleteButton.interactable = selectionMode && HasSelectedSessions(); 
+        UpdateDeleteButtonState();
     }
 
     public void AddSessionFromPopup(string sessionName)
@@ -118,7 +119,7 @@ public class SessionListController : MonoBehaviour
         return sessionItems;
     }
 
-    private void ToggleSelectionMode() 
+    private void ToggleSelectionMode()
     {
         selectionMode = !selectionMode;
 
@@ -129,7 +130,26 @@ public class SessionListController : MonoBehaviour
                 item.SetSelected(false);
         }
 
-        deleteButton.interactable = selectionMode && HasSelectedSessions();
+        UpdateDeleteButtonState();
+    }
+
+    public void HandleSessionToggleChanged()
+    {
+        UpdateDeleteButtonState();
+    }
+
+    private void UpdateDeleteButtonState()
+    {
+        bool shouldEnable = selectionMode && HasSelectedSessions();
+        if (deleteSessionButtonController != null)
+        {
+            deleteSessionButtonController.SetButtonEnabled(shouldEnable);
+        }
+    }
+
+    public void OnSessionTriggerSelected(int sessionId)
+    {
+        UpdateDeleteButtonState();
     }
 
     void LoadSession(int sessionId)
