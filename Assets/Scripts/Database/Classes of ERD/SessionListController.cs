@@ -21,6 +21,14 @@ public class SessionListController : MonoBehaviour
     [Header("Other Controllers")]
     public DeleteSessionButtonController deleteSessionButtonController;
 
+    [Header("Session Limit UI")]
+    public TextMeshProUGUI sessionCountText;
+
+    [Header("Error Display")]
+    public TextMeshProUGUI errorText;
+
+    private const int maxSessions = 50;
+
     private List<SessionItemUI> sessionItems = new List<SessionItemUI>();
     private bool selectionMode = false;
 
@@ -41,10 +49,7 @@ public class SessionListController : MonoBehaviour
             selectButton.onClick.AddListener(ToggleSelectionMode);
 
         if (deleteButton != null)
-        {
-
             deleteButton.interactable = false;
-        }
     }
 
     public void RefreshSessionList()
@@ -75,6 +80,11 @@ public class SessionListController : MonoBehaviour
             sessionItems.Add(itemUI);
         }
 
+        if (sessionCountText != null)
+        {
+            sessionCountText.text = $"Sessions: {sessions.Rows.Count}/{maxSessions}";
+        }
+
         UpdateDeleteButtonState();
     }
 
@@ -82,12 +92,27 @@ public class SessionListController : MonoBehaviour
     {
         if (DatabaseManager.Instance == null)
         {
-            Debug.LogError(" Cannot add session: DatabaseManager is null.");
+            Debug.LogError("Cannot add session: DatabaseManager is null.");
+            if (errorText != null)
+                errorText.text = "Database error. Try again later.";
+            return;
+        }
+
+        int currentSessionCount = DatabaseManager.Instance.GetAllSessions().Rows.Count;
+
+        if (currentSessionCount >= maxSessions)
+        {
+            Debug.LogWarning("Cannot add more sessions. Maximum limit reached.");
+            if (errorText != null)
+                errorText.text = $"Cannot add session – limit of {maxSessions} reached.";
             return;
         }
 
         DatabaseManager.Instance.AddSession(sessionName);
         RefreshSessionList();
+
+        if (errorText != null)
+            errorText.text = ""; // Clear error if success
     }
 
     public void DeleteSelectedSessions()
