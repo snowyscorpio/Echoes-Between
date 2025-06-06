@@ -113,4 +113,56 @@ public class DatabaseManager : MonoBehaviour
             command.ExecuteNonQuery();
         }
     }
+
+    public void SaveSettings(string resolution, string graphics, int volume)
+    {
+        using (IDbConnection connection = GetConnection())
+        {
+            IDbCommand command = connection.CreateCommand();
+            command.CommandText = @"
+            DELETE FROM Settings;
+            INSERT INTO Settings (resolution, graphics, volume)
+            VALUES (@resolution, @graphics, @volume);";
+
+            var resolutionParam = command.CreateParameter();
+            resolutionParam.ParameterName = "@resolution";
+            resolutionParam.Value = resolution;
+            command.Parameters.Add(resolutionParam);
+
+            var graphicsParam = command.CreateParameter();
+            graphicsParam.ParameterName = "@graphics";
+            graphicsParam.Value = graphics;
+            command.Parameters.Add(graphicsParam);
+
+            var volumeParam = command.CreateParameter();
+            volumeParam.ParameterName = "@volume";
+            volumeParam.Value = volume;
+            command.Parameters.Add(volumeParam);
+
+            command.ExecuteNonQuery();
+        }
+    }
+
+    public (string resolution, string graphics, int volume)? LoadSettings()
+    {
+        using (IDbConnection connection = GetConnection())
+        {
+            IDbCommand command = connection.CreateCommand();
+            command.CommandText = "SELECT resolution, graphics, volume FROM Settings LIMIT 1";
+
+            using (IDataReader reader = command.ExecuteReader())
+            {
+                if (reader.Read())
+                {
+                    string resolution = reader.GetString(0);
+                    string graphics = reader.GetString(1);
+                    int volume = reader.GetInt32(2);
+                    return (resolution, graphics, volume);
+                }
+            }
+        }
+        return null;
+    }
+
+
 }

@@ -4,14 +4,7 @@ using UnityEngine.UI;
 
 public class BackButton : MonoBehaviour
 {
-    public Button backButton; 
-
-    void Start()
-    {
-        backButton.onClick.AddListener(GoBack);
-    }
-
-    public void GoBack()
+    public void GoBackToMainMenu()
     {
         SceneManager.LoadScene(0);
     }
