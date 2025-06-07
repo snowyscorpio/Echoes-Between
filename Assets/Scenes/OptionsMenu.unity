@@ -701,7 +701,6 @@ GameObject:
   - component: {fileID: 302147051}
   - component: {fileID: 302147050}
   - component: {fileID: 302147049}
-  - component: {fileID: 302147052}
   m_Layer: 5
   m_Name: 'BackButton '
   m_TagString: Untagged
@@ -772,19 +771,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 302147050}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 302147052}
-        m_TargetAssemblyTypeName: ButtonNavigation, Assembly-CSharp
-        m_MethodName: GoBackToMainMenu
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &302147050
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -823,18 +810,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 302147047}
   m_CullTransparentMesh: 1
---- !u!114 &302147052
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 302147047}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a93d1362ed26c845895ba3e698cece1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &380954741
 GameObject:
   m_ObjectHideFlags: 0
@@ -2397,11 +2372,11 @@ RectTransform:
   - {fileID: 1911687990}
   - {fileID: 1144333845}
   - {fileID: 1941087774}
+  - {fileID: 1244821284}
   - {fileID: 1912417194}
   - {fileID: 849396944}
   - {fileID: 675775281}
   - {fileID: 52632720}
-  - {fileID: 1244821284}
   - {fileID: 1303099639}
   m_Father: {fileID: 223015541}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2427,6 +2402,7 @@ MonoBehaviour:
   graphicsDropdown: {fileID: 52632721}
   volumeSlider: {fileID: 1941087775}
   audioMixer: {fileID: 24100000, guid: d77b64c3819039344a4bc923a3ec426a, type: 2}
+  backButton: {fileID: 302147049}
 --- !u!1 &984756561
 GameObject:
   m_ObjectHideFlags: 0
@@ -3941,7 +3917,7 @@ MonoBehaviour:
   confirmationText: {fileID: 241064931}
   confirmButton: {fileID: 1862112974}
   cancelButton: {fileID: 951877345}
-  optionMenu: {fileID: 952571909}
+  optionMenu: {fileID: 0}
 --- !u!114 &1431279222
 MonoBehaviour:
   m_ObjectHideFlags: 0

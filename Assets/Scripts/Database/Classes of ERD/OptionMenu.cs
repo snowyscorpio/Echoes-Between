@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class OptionMenu : MonoBehaviour
 {
@@ -17,6 +18,9 @@ public class OptionMenu : MonoBehaviour
     public Slider volumeSlider;
     public AudioMixer audioMixer;
 
+    [Header("Navigation")]
+    public Button backButton; // כפתור חזרה
+
     private List<Resolution> availableResolutions = new List<Resolution>();
 
     private void Start()
@@ -25,6 +29,9 @@ public class OptionMenu : MonoBehaviour
         SetupGraphicsDropdown();
         SetupVolumeSlider();
         LoadSettingsFromDB();
+
+        if (backButton != null)
+            backButton.onClick.AddListener(GoBackToPreviousScene);
     }
 
     void SetupResolutionDropdown()
@@ -69,7 +76,6 @@ public class OptionMenu : MonoBehaviour
             fullscreenToggle.isOn = false;
     }
 
-
     void ChangeFullscreen(bool isFullscreen)
     {
         Screen.fullScreen = isFullscreen;
@@ -92,7 +98,6 @@ public class OptionMenu : MonoBehaviour
             }
         }
     }
-
 
     void SetupGraphicsDropdown()
     {
@@ -181,5 +186,18 @@ public class OptionMenu : MonoBehaviour
 
         float volumeValue = Mathf.Clamp01(settings.volume / 100f);
         volumeSlider.value = Mathf.Clamp(volumeValue, volumeSlider.minValue, volumeSlider.maxValue);
+    }
+
+    void GoBackToPreviousScene()
+    {
+        string previous = GameManager.Instance?.LastSceneBeforeOptions;
+        if (!string.IsNullOrEmpty(previous))
+        {
+            SceneManager.LoadScene(previous);
+        }
+        else
+        {
+            SceneManager.LoadScene(0); // fallback
+        }
     }
 }

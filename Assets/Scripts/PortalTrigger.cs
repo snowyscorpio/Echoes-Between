@@ -1,18 +1,17 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PortalTrigger : MonoBehaviour
 {
-    private bool alreadySaved = false;
+    private bool alreadyTriggered = false;
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (!alreadySaved && other.CompareTag("Player"))
+        if (!alreadyTriggered && other.CompareTag("Player"))
         {
-            Vector2 playerPosition = other.transform.position;
-            SaveManager.SaveLevelAuto(playerPosition);
-            alreadySaved = true;
-
-            Debug.Log("Auto save at portal!");
+            alreadyTriggered = true;
+            int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
+            SceneManager.LoadScene(nextSceneIndex);
         }
     }
 }

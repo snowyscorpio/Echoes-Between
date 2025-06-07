@@ -6,7 +6,7 @@ public class ButtonNavigation : MonoBehaviour
     public void OptionMenu()
     {
         GameManager.Instance.LastSceneBeforeOptions = SceneManager.GetActiveScene().name;
-        SceneManager.LoadScene("Options");
+        SceneManager.LoadScene("OptionsMenu");
     }
 
     public void QuitGame()
