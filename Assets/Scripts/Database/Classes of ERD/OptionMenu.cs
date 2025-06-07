@@ -61,17 +61,38 @@ public class OptionMenu : MonoBehaviour
     void ChangeResolution(int index)
     {
         Resolution res = availableResolutions[index];
-        Screen.SetResolution(res.width, res.height, Screen.fullScreen);
+        Screen.SetResolution(res.width, res.height, false);
 
+        Debug.Log("Resolution changed to: " + res.width + "x" + res.height);
+
+        if (fullscreenToggle.isOn)
+            fullscreenToggle.isOn = false;
     }
+
 
     void ChangeFullscreen(bool isFullscreen)
     {
         Screen.fullScreen = isFullscreen;
-        Resolution res = availableResolutions[resolutionDropdown.value];
-        Screen.SetResolution(res.width, res.height, isFullscreen);
+        Debug.Log("Fullscreen: " + isFullscreen);
 
+        if (isFullscreen)
+        {
+            Resolution current = Screen.currentResolution;
+            Screen.SetResolution(current.width, current.height, true);
+
+            Debug.Log("Resolution set for fullscreen: " + current.width + "x" + current.height);
+
+            int currentIndex = availableResolutions.FindIndex(r =>
+                r.width == current.width && r.height == current.height);
+
+            if (currentIndex >= 0)
+            {
+                resolutionDropdown.value = currentIndex;
+                resolutionDropdown.RefreshShownValue();
+            }
+        }
     }
+
 
     void SetupGraphicsDropdown()
     {
@@ -86,14 +107,17 @@ public class OptionMenu : MonoBehaviour
     void ChangeGraphicsQuality(int index)
     {
         QualitySettings.SetQualityLevel(index);
-
     }
 
     void SetupVolumeSlider()
     {
+        volumeSlider.minValue = 0.0001f;
+        volumeSlider.maxValue = 0.5f;
+
         if (audioMixer.GetFloat("Volume", out float volume))
         {
-            volumeSlider.value = Mathf.Pow(10, volume / 20f);
+            float normalized = Mathf.Clamp(Mathf.Pow(10, volume / 20f), volumeSlider.minValue, volumeSlider.maxValue);
+            volumeSlider.value = normalized;
         }
 
         volumeSlider.onValueChanged.AddListener(SetVolume);
@@ -101,9 +125,8 @@ public class OptionMenu : MonoBehaviour
 
     void SetVolume(float value)
     {
-        float db = Mathf.Log10(Mathf.Clamp(value, 0.0001f, 1f)) * 20;
+        float db = Mathf.Log10(Mathf.Clamp(value, volumeSlider.minValue, volumeSlider.maxValue)) * 20;
         audioMixer.SetFloat("Volume", db);
-
     }
 
     public void SaveSettingsToDB()
@@ -116,37 +139,47 @@ public class OptionMenu : MonoBehaviour
         Debug.Log("Settings saved to database.");
     }
 
+    public void ApplyCurrentSettings()
+    {
+        ChangeResolution(resolutionDropdown.value);
+        ChangeFullscreen(fullscreenToggle.isOn);
+        ChangeGraphicsQuality(graphicsDropdown.value);
+        SetVolume(volumeSlider.value);
+    }
+
     void LoadSettingsFromDB()
     {
         var settings = DatabaseManager.Instance.LoadSettings();
         if (settings.HasValue)
         {
-            string[] parts = settings.Value.resolution.Split('x');
-            if (parts.Length == 2 &&
-                int.TryParse(parts[0], out int w) &&
-                int.TryParse(parts[1], out int h))
-            {
-                int index = availableResolutions.FindIndex(r => r.width == w && r.height == h);
-                if (index >= 0)
-                {
-                    resolutionDropdown.value = index;
-                    resolutionDropdown.RefreshShownValue();
-                    Screen.SetResolution(w, h, fullscreenToggle.isOn);
-                }
-            }
-
-            int graphicsIndex = System.Array.IndexOf(QualitySettings.names, settings.Value.graphics);
-            if (graphicsIndex >= 0)
-            {
-                graphicsDropdown.value = graphicsIndex;
-                graphicsDropdown.RefreshShownValue();
-                QualitySettings.SetQualityLevel(graphicsIndex);
-            }
-
-            float volumeValue = Mathf.Clamp01(settings.Value.volume / 100f);
-            volumeSlider.value = volumeValue;
-            float db = Mathf.Log10(volumeValue) * 20f;
-            audioMixer.SetFloat("Volume", db);
+            UpdateUIFromSettings(settings.Value);
+            ApplyCurrentSettings();
         }
+    }
+
+    public void UpdateUIFromSettings((string resolution, string graphics, int volume) settings)
+    {
+        string[] parts = settings.resolution.Split('x');
+        if (parts.Length == 2 &&
+            int.TryParse(parts[0], out int w) &&
+            int.TryParse(parts[1], out int h))
+        {
+            int index = availableResolutions.FindIndex(r => r.width == w && r.height == h);
+            if (index >= 0)
+            {
+                resolutionDropdown.value = index;
+                resolutionDropdown.RefreshShownValue();
+            }
+        }
+
+        int graphicsIndex = System.Array.IndexOf(QualitySettings.names, settings.graphics);
+        if (graphicsIndex >= 0)
+        {
+            graphicsDropdown.value = graphicsIndex;
+            graphicsDropdown.RefreshShownValue();
+        }
+
+        float volumeValue = Mathf.Clamp01(settings.volume / 100f);
+        volumeSlider.value = Mathf.Clamp(volumeValue, volumeSlider.minValue, volumeSlider.maxValue);
     }
 }

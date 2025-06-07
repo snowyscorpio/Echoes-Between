@@ -701,6 +701,7 @@ GameObject:
   - component: {fileID: 302147051}
   - component: {fileID: 302147050}
   - component: {fileID: 302147049}
+  - component: {fileID: 302147052}
   m_Layer: 5
   m_Name: 'BackButton '
   m_TagString: Untagged
@@ -772,8 +773,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 952571910}
-        m_TargetAssemblyTypeName: BackButton, Assembly-CSharp
+      - m_Target: {fileID: 302147052}
+        m_TargetAssemblyTypeName: ButtonNavigation, Assembly-CSharp
         m_MethodName: GoBackToMainMenu
         m_Mode: 1
         m_Arguments:
@@ -822,6 +823,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 302147047}
   m_CullTransparentMesh: 1
+--- !u!114 &302147052
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 302147047}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a93d1362ed26c845895ba3e698cece1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &380954741
 GameObject:
   m_ObjectHideFlags: 0
@@ -1599,7 +1612,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -63.5, y: -22.4}
+  m_AnchoredPosition: {x: -59.8, y: -22.4}
   m_SizeDelta: {x: 9.63, y: 2.89}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &675775282
@@ -2359,7 +2372,6 @@ GameObject:
   m_Component:
   - component: {fileID: 952571908}
   - component: {fileID: 952571909}
-  - component: {fileID: 952571910}
   m_Layer: 5
   m_Name: OptionsMenu
   m_TagString: Untagged
@@ -2415,18 +2427,6 @@ MonoBehaviour:
   graphicsDropdown: {fileID: 52632721}
   volumeSlider: {fileID: 1941087775}
   audioMixer: {fileID: 24100000, guid: d77b64c3819039344a4bc923a3ec426a, type: 2}
---- !u!114 &952571910
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 952571907}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fc472c34e2bf3cf4fb075d6f7305bd8d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &984756561
 GameObject:
   m_ObjectHideFlags: 0

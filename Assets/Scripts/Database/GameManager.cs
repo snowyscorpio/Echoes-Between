@@ -24,6 +24,7 @@ public class GameManager : MonoBehaviour
     public int CurrentLevelID { get; set; }
     public int LevelDifficulty { get; set; }
     public string PendingStartPosition { get; set; }
+    public string LastSceneBeforeOptions { get; set; }  
 
     private void Awake()
     {

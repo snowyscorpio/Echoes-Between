@@ -36,5 +36,7 @@ INSERT INTO "Sessions" ("sessionID","sessionName","dateOfLastSave") VALUES (1,'a
  (7,'1234567891','2025-06-02 12:39:44'),
  (8,'12345678911','2025-06-02 12:39:56'),
  (9,'bla','2025-06-02 13:03:24'),
- (15,'kkkkkkkkkkkk122','2025-06-06 08:12:59');
+ (15,'kkkkkkkkkkkk122','2025-06-06 08:12:59'),
+ (16,'pipo','2025-06-07 13:39:43');
+INSERT INTO "Settings" ("settingsID","graphics","resolution","volume") VALUES (22,'Ultra','1920x1080',2);
 COMMIT;

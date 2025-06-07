@@ -27,8 +27,10 @@ public class SessionListController : MonoBehaviour
     [Header("Error Display")]
     public TextMeshProUGUI errorText;
 
-    private const int maxSessions = 50;
+    [Header("No Space Popup")]
+    public GameObject noSpacePopup;
 
+    private const int maxSessions = 50;
     private List<SessionItemUI> sessionItems = new List<SessionItemUI>();
     private bool selectionMode = false;
 
@@ -38,6 +40,12 @@ public class SessionListController : MonoBehaviour
         {
             Debug.LogError("Missing managers");
             return;
+        }
+
+        if (!SystemSpaceChecker.HasEnoughDiskSpace())
+        {
+            if (noSpacePopup != null)
+                noSpacePopup.SetActive(true);
         }
 
         RefreshSessionList();
@@ -90,6 +98,13 @@ public class SessionListController : MonoBehaviour
 
     public void AddSessionFromPopup(string sessionName)
     {
+        if (!SystemSpaceChecker.HasEnoughDiskSpace())
+        {
+            if (noSpacePopup != null)
+                noSpacePopup.SetActive(true);
+            return;
+        }
+
         if (DatabaseManager.Instance == null)
         {
             Debug.LogError("Cannot add session: DatabaseManager is null.");
@@ -179,6 +194,13 @@ public class SessionListController : MonoBehaviour
 
     void LoadSession(int sessionId)
     {
+        if (!SystemSpaceChecker.HasEnoughDiskSpace())
+        {
+            if (noSpacePopup != null)
+                noSpacePopup.SetActive(true);
+            return;
+        }
+
         if (DatabaseManager.Instance == null || GameManager.Instance == null)
         {
             Debug.LogError(" Cannot load session – missing DatabaseManager or GameManager");
@@ -214,12 +236,12 @@ public class SessionListController : MonoBehaviour
             }
         }
 
-        void ApplySessionToGameManager(int sessionId, int levelID, string position, int difficulty)
+        void ApplySessionToGameManager(int sid, int lid, string pos, int diff)
         {
-            GameManager.Instance.CurrentSessionID = sessionId;
-            GameManager.Instance.PendingStartPosition = position;
-            GameManager.Instance.CurrentLevelID = levelID;
-            GameManager.Instance.LevelDifficulty = difficulty;
+            GameManager.Instance.CurrentSessionID = sid;
+            GameManager.Instance.PendingStartPosition = pos;
+            GameManager.Instance.CurrentLevelID = lid;
+            GameManager.Instance.LevelDifficulty = diff;
         }
     }
 }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Audio;
 
 public class MusicManager : MonoBehaviour
 {
@@ -26,12 +27,31 @@ public class MusicManager : MonoBehaviour
         audioSource.loop = true;
         audioSource.playOnAwake = false;
 
+        // Connect to AudioMixer
+        AudioMixer mixer = Resources.Load<AudioMixer>("MainAudioMixer");
+        if (mixer != null)
+        {
+            AudioMixerGroup[] groups = mixer.FindMatchingGroups("Master");
+            if (groups.Length > 0)
+            {
+                audioSource.outputAudioMixerGroup = groups[0];
+            }
+            else
+            {
+                Debug.LogWarning("No AudioMixerGroup named 'Master' found in MainAudioMixer.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("AudioMixer 'MainAudioMixer' not found in Resources folder.");
+        }
+
         menuMusic = Resources.Load<AudioClip>("Audio/MenuMusic");
         sessionMusic = Resources.Load<AudioClip>("Audio/SessionMusic");
 
         SceneManager.sceneLoaded += OnSceneLoaded;
 
-        PlayMenuMusic(); // מוזיקה בהתחלה
+        PlayMenuMusic(); 
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)

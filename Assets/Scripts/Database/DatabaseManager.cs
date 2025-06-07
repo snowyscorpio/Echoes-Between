@@ -12,19 +12,22 @@ public class DatabaseManager : MonoBehaviour
     {
         get
         {
-            if (instance == null)
-            {
-                GameObject go = new GameObject("DatabaseManager");
-                instance = go.AddComponent<DatabaseManager>();
-                DontDestroyOnLoad(go);
-            }
             return instance;
         }
     }
 
     private void Awake()
     {
-        InitializeDatabase();
+        if (instance == null)
+        {
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+            InitializeDatabase();
+        }
+        else if (instance != this)
+        {
+            Destroy(gameObject);
+        }
     }
 
     private void InitializeDatabase()
@@ -38,17 +41,20 @@ public class DatabaseManager : MonoBehaviour
         }
 
         dbPath = "Data Source=" + fullPath + ";Version=3;";
+        Debug.Log("Database initialized: " + dbPath);
     }
 
     public IDbConnection GetConnection()
     {
         IDbConnection connection = new SQLiteConnection(dbPath);
         connection.Open();
+        Debug.Log("Database connection opened.");
         return connection;
     }
 
     public DataTable GetAllSessions()
     {
+        Debug.Log("Fetching all sessions from database...");
         using (IDbConnection connection = GetConnection())
         {
             IDbCommand command = connection.CreateCommand();
@@ -57,12 +63,14 @@ public class DatabaseManager : MonoBehaviour
 
             DataTable table = new DataTable();
             table.Load(reader);
+            Debug.Log("Loaded " + table.Rows.Count + " session(s) from database.");
             return table;
         }
     }
 
     public void AddSession(string name)
     {
+        Debug.Log("Adding new session: " + name);
         using (IDbConnection connection = GetConnection())
         {
             IDbCommand command = connection.CreateCommand();
@@ -74,11 +82,13 @@ public class DatabaseManager : MonoBehaviour
             command.Parameters.Add(nameParam);
 
             command.ExecuteNonQuery();
+            Debug.Log("Session added to database.");
         }
     }
 
     public void DeleteSession(int sessionId)
     {
+        Debug.Log("Deleting session ID: " + sessionId);
         using (IDbConnection connection = GetConnection())
         {
             IDbCommand command = connection.CreateCommand();
@@ -90,11 +100,13 @@ public class DatabaseManager : MonoBehaviour
             command.Parameters.Add(idParam);
 
             command.ExecuteNonQuery();
+            Debug.Log("Session deleted from database.");
         }
     }
 
     public void UpdateSession(int sessionId, string newName)
     {
+        Debug.Log("Updating session ID " + sessionId + " with new name: " + newName);
         using (IDbConnection connection = GetConnection())
         {
             IDbCommand command = connection.CreateCommand();
@@ -111,11 +123,13 @@ public class DatabaseManager : MonoBehaviour
             command.Parameters.Add(idParam);
 
             command.ExecuteNonQuery();
+            Debug.Log("Session name updated in database.");
         }
     }
 
     public void SaveSettings(string resolution, string graphics, int volume)
     {
+        Debug.Log("Saving settings: Resolution=" + resolution + ", Graphics=" + graphics + ", Volume=" + volume);
         using (IDbConnection connection = GetConnection())
         {
             IDbCommand command = connection.CreateCommand();
@@ -140,11 +154,13 @@ public class DatabaseManager : MonoBehaviour
             command.Parameters.Add(volumeParam);
 
             command.ExecuteNonQuery();
+            Debug.Log("Settings saved to database.");
         }
     }
 
     public (string resolution, string graphics, int volume)? LoadSettings()
     {
+        Debug.Log("Loading settings from database...");
         using (IDbConnection connection = GetConnection())
         {
             IDbCommand command = connection.CreateCommand();
@@ -157,12 +173,16 @@ public class DatabaseManager : MonoBehaviour
                     string resolution = reader.GetString(0);
                     string graphics = reader.GetString(1);
                     int volume = reader.GetInt32(2);
+
+                    Debug.Log("Settings loaded: Resolution=" + resolution + ", Graphics=" + graphics + ", Volume=" + volume);
                     return (resolution, graphics, volume);
+                }
+                else
+                {
+                    Debug.LogWarning("No settings found in database.");
                 }
             }
         }
         return null;
     }
-
-
 }

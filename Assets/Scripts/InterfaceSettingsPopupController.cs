@@ -34,7 +34,10 @@ public class InterfaceSettingsPopupController : MonoBehaviour
     private void OnConfirm()
     {
         if (optionMenu != null)
+        {
             optionMenu.SaveSettingsToDB();
+            optionMenu.ApplyCurrentSettings();
+        }
 
         confirmationPopup.SetActive(false);
     }
