@@ -24,11 +24,11 @@ public class LadderMovement : MonoBehaviour
         if (isLadder && Mathf.Abs(vertical) > 0f)
         {
             isClimbing = true;
-            playerMovement.isClimbing = true; // עדכון גם ב־PlayerMovement
+            playerMovement.isClimbing = true; 
         }
         else if (!isLadder || (isClimbing && Mathf.Abs(vertical) == 0f && Mathf.Abs(horizontal) > 0f))
         {
-            // אם יצאה מהסולם או רוצה לזוז לצד - מפסיקים לטפס
+           
             isClimbing = false;
             playerMovement.isClimbing = false;
         }
@@ -43,7 +43,7 @@ public class LadderMovement : MonoBehaviour
         }
         else
         {
-            rb.gravityScale = 4f; // החזרת גרביטציה רגילה
+            rb.gravityScale = 4f; 
         }
     }
 

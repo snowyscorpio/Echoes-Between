@@ -203,7 +203,7 @@ public class SessionListController : MonoBehaviour
 
         if (DatabaseManager.Instance == null || GameManager.Instance == null)
         {
-            Debug.LogError(" Cannot load session – missing DatabaseManager or GameManager");
+            Debug.LogError("Cannot load session – missing DatabaseManager or GameManager");
             return;
         }
 
@@ -221,17 +221,21 @@ public class SessionListController : MonoBehaviour
             {
                 if (reader.Read())
                 {
-                    int levelID = reader.GetInt32(0);
                     string position = reader.IsDBNull(1) ? "0,0" : reader.GetString(1);
                     int difficulty = reader.GetInt32(2);
 
-                    ApplySessionToGameManager(sessionId, levelID, position, difficulty);
-                    SceneManager.LoadScene("Level_" + levelID);
+                    ApplySessionToGameManager(sessionId, difficulty, position, difficulty);
+
+                    // Use levelDifficulty to determine scene name
+                    LoadingManager.SceneToLoad = "Level_" + difficulty;
+                    SceneManager.LoadScene("Loading");
                 }
                 else
                 {
+                    // If no level data, fallback to Level_1
                     ApplySessionToGameManager(sessionId, 1, "0,0", 1);
-                    SceneManager.LoadScene("Level_1");
+                    LoadingManager.SceneToLoad = "Level_1";
+                    SceneManager.LoadScene("Loading");
                 }
             }
         }
@@ -244,4 +248,5 @@ public class SessionListController : MonoBehaviour
             GameManager.Instance.LevelDifficulty = diff;
         }
     }
+
 }

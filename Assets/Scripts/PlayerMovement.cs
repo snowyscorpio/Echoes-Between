@@ -16,18 +16,25 @@ public class PlayerMovement : MonoBehaviour
     bool jump = false;
     bool crouch = false;
 
-    public bool isClimbing = false; 
+    public bool isClimbing = false;
 
     void Start()
     {
         respawnPoint = transform.position;
-
-
         controller.OnLandEvent.AddListener(OnLanding);
     }
 
     void Update()
     {
+        if (DialogueManager.IsDialogueActive)
+        {
+            horizontalMove = 0f;
+            jump = false;
+            crouch = false;
+            animator.SetFloat("Speed", 0f);
+            return;
+        }
+
         horizontalMove = Input.GetAxisRaw("Horizontal") * runSpeed;
 
         if (!isClimbing)
@@ -36,7 +43,7 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            animator.SetFloat("Speed", Mathf.Abs(vertical)); // בזמן טיפוס - האנימציה לפי טיפוס
+            animator.SetFloat("Speed", Mathf.Abs(vertical));
         }
 
         if (Input.GetButtonDown("Jump") && !isClimbing)
@@ -60,7 +67,6 @@ public class PlayerMovement : MonoBehaviour
 
         fallDetector.transform.position = new Vector2(transform.position.x, fallDetector.transform.position.y);
     }
-
 
     public void OnLanding()
     {

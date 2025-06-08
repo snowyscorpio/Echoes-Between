@@ -24,7 +24,7 @@ public class GameManager : MonoBehaviour
     public int CurrentLevelID { get; set; }
     public int LevelDifficulty { get; set; }
     public string PendingStartPosition { get; set; }
-    public string LastSceneBeforeOptions { get; set; }  
+    public string LastSceneBeforeOptions { get; set; }
 
     private void Awake()
     {
@@ -38,6 +38,29 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogWarning("Duplicate GameManager detected and destroyed");
             Destroy(gameObject);
+        }
+    }
+
+    private void Start()
+    {
+        SetLevelDifficultyFromScene();
+    }
+
+    public void SetLevelDifficultyFromScene()
+    {
+        string sceneName = SceneManager.GetActiveScene().name;
+        if (sceneName.StartsWith("Level_"))
+        {
+            string numberStr = sceneName.Replace("Level_", "");
+            if (int.TryParse(numberStr, out int levelNum))
+            {
+                LevelDifficulty = levelNum;
+                Debug.Log("LevelDifficulty set to: " + LevelDifficulty);
+            }
+        }
+        else
+        {
+            Debug.Log("Scene not matched for LevelDifficulty. Current: " + sceneName);
         }
     }
 
@@ -73,10 +96,9 @@ public class GameManager : MonoBehaviour
 
     public void LoadNextLevel()
     {
-        if (CurrentLevelID >= 3)
+        if (CurrentLevelID >= 4)
         {
-            Debug.Log("Loading LastLevel scene");
-            SceneManager.LoadScene("LastLevel");
+            Debug.Log("No more levels to load. Level_4 is the last one.");
         }
         else
         {

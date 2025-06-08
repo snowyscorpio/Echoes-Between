@@ -10,7 +10,7 @@ public class MusicManager : MonoBehaviour
     private AudioClip menuMusic;
     private AudioClip sessionMusic;
 
-    private string[] sessionScenes = { "Level_1", "Level_2", "Level_3", "LastLevel", "Cutscene", "Loading" };
+    private string[] sessionScenes = { "Level_1", "Level_2", "Level_3", "Level_4", "Cutscene", "Loading" };
 
     void Awake()
     {
@@ -51,7 +51,7 @@ public class MusicManager : MonoBehaviour
 
         SceneManager.sceneLoaded += OnSceneLoaded;
 
-        PlayMenuMusic(); 
+        PlayMenuMusic();
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
