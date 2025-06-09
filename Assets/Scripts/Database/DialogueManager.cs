@@ -338,8 +338,7 @@ public class DialogueManager : MonoBehaviour
             endTitleText.text = "THE END";
             endSubtitleText.text = "Be a good human, enjoy life.";
 
-
-            ParticleSystem[] allParticles = FindObjectsOfType<ParticleSystem>();
+            ParticleSystem[] allParticles = Object.FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None);
             foreach (var ps in allParticles)
             {
                 ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
