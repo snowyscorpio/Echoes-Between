@@ -26,7 +26,7 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        if (DialogueManager.IsDialogueActive)
+        if (DialogueManager.IsDialogueActive || GameManager.Instance.LevelDifficulty == 4)
         {
             horizontalMove = 0f;
             jump = false;

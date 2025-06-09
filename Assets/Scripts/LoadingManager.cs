@@ -55,7 +55,7 @@ public class LoadingManager : MonoBehaviour
             if (progressBar != null)
                 progressBar.value = progress;
 
-            if (operation.progress >= 0.9f && timer >= 8f)
+            if (operation.progress >= 0.9f && timer >= 6f)
             {
                 loadingLabelText.text = "DONE!";
                 loadingPercentText.text = "100%";

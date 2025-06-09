@@ -27,6 +27,13 @@ public class DialogueManager : MonoBehaviour
     [Header("Skip Hint")]
     public GameObject skipText;
 
+    [Header("End Screen")]
+    public GameObject endScreenCanvas;
+    public CanvasGroup endScreenCanvasGroup;
+    public TMP_Text endTitleText;
+    public TMP_Text endSubtitleText;
+
+
     private CanvasGroup skipCanvasGroup;
     private Coroutine blinkCoroutine;
 
@@ -49,7 +56,7 @@ public class DialogueManager : MonoBehaviour
 
     IEnumerator DelayedDialogueStart()
     {
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(1f);
 
 
         GameManager.Instance.SetLevelDifficultyFromScene();
@@ -298,7 +305,9 @@ public class DialogueManager : MonoBehaviour
 
     void EndDialogue()
     {
-        dialoguePanel.SetActive(false);
+        isDialogueActive = false;
+        IsDialogueActive = false;
+
         if (skipText != null) skipText.SetActive(false);
         if (blinkCoroutine != null)
         {
@@ -306,10 +315,52 @@ public class DialogueManager : MonoBehaviour
             blinkCoroutine = null;
         }
 
-        isDialogueActive = false;
-        IsDialogueActive = false;
-        EnablePlayer();
+        if (GameManager.Instance.LevelDifficulty == 4)
+        {
+            StartCoroutine(ShowEndScreenAndReturn());
+        }
+        else
+        {
+            dialoguePanel.SetActive(false);
+            EnablePlayer();
+        }
     }
+
+    IEnumerator ShowEndScreenAndReturn()
+    {
+        dialoguePanel.SetActive(false);
+
+        if (endScreenCanvas != null)
+        {
+            endScreenCanvas.SetActive(true);
+            endScreenCanvasGroup.alpha = 0f;
+
+            endTitleText.text = "THE END";
+            endSubtitleText.text = "Be a good human, enjoy life.";
+
+
+            ParticleSystem[] allParticles = FindObjectsOfType<ParticleSystem>();
+            foreach (var ps in allParticles)
+            {
+                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+
+            float duration = 2f;
+            float timer = 0f;
+
+            while (timer < duration)
+            {
+                timer += Time.deltaTime;
+                endScreenCanvasGroup.alpha = Mathf.Lerp(0f, 1f, timer / duration);
+                yield return null;
+            }
+
+            yield return new WaitForSeconds(7f);
+
+            UnityEngine.SceneManagement.SceneManager.LoadScene(2);
+        }
+    }
+
 
     IEnumerator BlinkSkipText()
     {
