@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -25,14 +26,29 @@ public class OptionMenu : MonoBehaviour
 
     private void Start()
     {
+        Debug.Log("OptionMenu Start: checking UI bindings");
+
+        Debug.Log("resolutionDropdown: " + (resolutionDropdown != null));
+        Debug.Log("fullscreenToggle: " + (fullscreenToggle != null));
+        Debug.Log("graphicsDropdown: " + (graphicsDropdown != null));
+        Debug.Log("volumeSlider: " + (volumeSlider != null));
+        Debug.Log("audioMixer: " + (audioMixer != null));
+
         SetupResolutionDropdown();
         SetupGraphicsDropdown();
         SetupVolumeSlider();
-        LoadSettingsFromDB();
+        StartCoroutine(LoadSettingsDelayed());
 
         if (backButton != null)
             backButton.onClick.AddListener(GoBackToPreviousScene);
     }
+
+    private IEnumerator LoadSettingsDelayed()
+    {
+        yield return null; // תחכי פריים אחד שכולם יאוחזרו
+        LoadSettingsFromDB();
+    }
+
 
     void SetupResolutionDropdown()
     {
@@ -154,16 +170,49 @@ public class OptionMenu : MonoBehaviour
 
     void LoadSettingsFromDB()
     {
-        var settings = DatabaseManager.Instance.LoadSettings();
-        if (settings.HasValue)
+        try
         {
-            UpdateUIFromSettings(settings.Value);
-            ApplyCurrentSettings();
+            var settings = DatabaseManager.Instance.LoadSettings();
+            if (settings.HasValue)
+            {
+                Debug.Log("Settings loaded from DB: " + settings.Value);
+
+                Debug.Log("Calling UpdateUIFromSettings...");
+                UpdateUIFromSettings(settings.Value);
+
+                Debug.Log("Calling ApplyCurrentSettings...");
+                ApplyCurrentSettings();
+
+                Debug.Log("Settings loaded and applied.");
+            }
+            else
+            {
+                Debug.LogWarning("No saved settings found in DB.");
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError("Error in LoadSettingsFromDB: " + ex.Message);
+            Debug.LogError("StackTrace: " + ex.StackTrace);
         }
     }
 
+
+
     public void UpdateUIFromSettings((string resolution, string graphics, int volume) settings)
     {
+        if (string.IsNullOrEmpty(settings.resolution))
+        {
+            Debug.LogError("resolution from DB is null or empty");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(settings.graphics))
+        {
+            Debug.LogError("graphics from DB is null or empty");
+            return;
+        }
+
         string[] parts = settings.resolution.Split('x');
         if (parts.Length == 2 &&
             int.TryParse(parts[0], out int w) &&
@@ -187,6 +236,8 @@ public class OptionMenu : MonoBehaviour
         float volumeValue = Mathf.Clamp01(settings.volume / 100f);
         volumeSlider.value = Mathf.Clamp(volumeValue, volumeSlider.minValue, volumeSlider.maxValue);
     }
+
+
 
     void GoBackToPreviousScene()
     {

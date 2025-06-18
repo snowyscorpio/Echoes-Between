@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS Levels (
     levelID INTEGER PRIMARY KEY AUTOINCREMENT,
     positionInLevel TEXT NOT NULL,
     levelDifficulty INTEGER NOT NULL,
-    sessionID INTEGER,
+    sessionID INTEGER, hasSeenDialogue INTEGER DEFAULT 0,
     FOREIGN KEY (sessionID) REFERENCES Sessions(sessionID)
 );
 CREATE TABLE IF NOT EXISTS Sentences (
@@ -36,6 +36,8 @@ INSERT INTO "Characters" ("characterID","characterName","characterAppearance","l
  (3,'Roxy','Portraits/Roxy Portrait',2),
  (4,'Clair','Portraits/Clair Portrait',3),
  (5,'Future Self','Portraits/PlayerOld Portrait',4);
+INSERT INTO "Levels" ("levelID","positionInLevel","levelDifficulty","sessionID","hasSeenDialogue") VALUES (1,'7.24,0.41',1,24,1),
+ (2,'39.11,0.54',1,26,1);
 INSERT INTO "Sentences" ("conversationID","ProviderID","ReceiverID","Sentence") VALUES (1,2,1,'Whoa! What was that light?! I’ve never seen anything like it!'),
  (2,2,1,'My cousin said this door stopped working in dinosaur times... are you a dinosaur?'),
  (3,1,2,'I... fell.. Where am i?'),
@@ -52,20 +54,19 @@ INSERT INTO "Sentences" ("conversationID","ProviderID","ReceiverID","Sentence") 
  (14,4,1,'Oh, the portal opened? Must be because I’m here, ha ha ha.'),
  (15,4,1,'Sweetie, that outfit… we need to get you shopping. Like, ASAP.'),
  (16,1,4,'This place… it’s so shiny. So… perfect.'),
- (17,4,1,'Yeah it''s shiny and classy but don''t forget my dear, sometimes looks can fool you. Even the shiniest diamond can be fake.'),
+ (17,4,1,'Oh don''t forget my dear, sometimes looks can fool you. Even the shiniest diamond can be fake.'),
  (18,4,1,'Anyway, I’m late for my mani-pedi. See you, sparkle~'),
  (19,5,1,'I knew you would come, I''ve been waiting.'),
  (20,1,5,'Have we met before...? You feel… familiar.'),
  (21,5,1,'Maybe hahaha, But maybe i''m a mirror of all you’ve seen. Of each world, maybe i''m the echoes between.'),
  (22,5,1,'My dear, The journey to success doesn''t depend on academic, financial, or material achievements.'),
  (23,5,1,'True success lies in the empathy, joy, and moments we gather along the way.'),
- (24,5,1,'A truly successful person is someone who knows how to appreciate even the smallest accomplishment.');
+ (24,5,1,'A truly successful person is someone who knows how to appreciate even the smallest accomplishment.'),
+ (25,5,1,'You’d be amazed at how many kind souls you’ll meet along the journey.'),
+ (26,5,1,'Each walking their own road, in their own rhythm, quietly succeeding in their own unique way.');
 INSERT INTO "Sessions" ("sessionID","sessionName","dateOfLastSave") VALUES (1,'amen','2025-05-31 09:29:11'),
- (2,'oof','2025-06-02 10:13:57'),
- (7,'1234567891','2025-06-02 12:39:44'),
- (8,'12345678911','2025-06-02 12:39:56'),
- (9,'bla','2025-06-02 13:03:24'),
- (15,'kkkkkkkkkkkk122','2025-06-06 08:12:59'),
- (16,'pipo','2025-06-07 13:39:43');
-INSERT INTO "Settings" ("settingsID","graphics","resolution","volume") VALUES (22,'Ultra','1920x1080',2);
+ (24,'try6','2025-06-11 16:09:21'),
+ (25,'aaaaaaaaaaaaaaa','2025-06-11 22:51:37'),
+ (26,'try111','2025-06-12 19:30:32');
+INSERT INTO "Settings" ("settingsID","graphics","resolution","volume") VALUES (39,'Ultra','1920x1080',7);
 COMMIT;

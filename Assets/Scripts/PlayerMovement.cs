@@ -9,7 +9,6 @@ public class PlayerMovement : MonoBehaviour
     private float vertical;
     public float runSpeed = 40f;
 
-    private Vector3 respawnPoint;
     public GameObject fallDetector;
 
     float horizontalMove = 0f;
@@ -18,9 +17,23 @@ public class PlayerMovement : MonoBehaviour
 
     public bool isClimbing = false;
 
+    private Vector2 levelStartPosition;
+
     void Start()
     {
-        respawnPoint = transform.position;
+        if (GameManager.Instance != null && GameManager.Instance.LastSavedPositionForSession.HasValue)
+        {
+            transform.position = new Vector3(GameManager.Instance.LastSavedPositionForSession.Value.x,
+                                             GameManager.Instance.LastSavedPositionForSession.Value.y, 0f);
+            Debug.Log("[PlayerMovement] Loaded from saved session position: " + GameManager.Instance.LastSavedPositionForSession.Value);
+        }
+        else
+        {
+            levelStartPosition = GameManager.Instance != null ? GameManager.Instance.GetStartPosition() : new Vector2(-4.75f, -2.04f);
+            transform.position = new Vector3(levelStartPosition.x, levelStartPosition.y, 0f);
+            Debug.Log("[PlayerMovement] Spawned at: " + levelStartPosition);
+        }
+
         controller.OnLandEvent.AddListener(OnLanding);
     }
 
@@ -65,7 +78,8 @@ public class PlayerMovement : MonoBehaviour
             crouch = false;
         }
 
-        fallDetector.transform.position = new Vector2(transform.position.x, fallDetector.transform.position.y);
+        if (fallDetector != null)
+            fallDetector.transform.position = new Vector2(transform.position.x, fallDetector.transform.position.y);
     }
 
     public void OnLanding()
@@ -82,7 +96,9 @@ public class PlayerMovement : MonoBehaviour
     {
         if (collision.CompareTag("FallDetector"))
         {
-            transform.position = respawnPoint;
+            transform.position = new Vector3(levelStartPosition.x, levelStartPosition.y, 0f);
+            SaveManager.SaveLevelAuto(levelStartPosition);
+            Debug.Log("[PlayerMovement] Fell and auto-saved at spawn point: " + levelStartPosition);
         }
     }
 
@@ -93,5 +109,10 @@ public class PlayerMovement : MonoBehaviour
             controller.Move(horizontalMove * Time.fixedDeltaTime, crouch, jump);
         }
         jump = false;
+    }
+
+    public Vector2 GetSpawnPoint()
+    {
+        return levelStartPosition;
     }
 }

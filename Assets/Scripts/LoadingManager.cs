@@ -3,15 +3,18 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using TMPro;
+using UnityEngine.Audio;
 
 public class LoadingManager : MonoBehaviour
 {
     public static string SceneToLoad;
 
-    public TMP_Text loadingLabelText;     // Shows "Loading..."
-    public TMP_Text loadingPercentText;   // Shows loading progress
-    public TMP_Text tipText;              // Random tip
-    public Slider progressBar;            // Loading progress bar
+    public TMP_Text loadingLabelText;
+    public TMP_Text loadingPercentText;
+    public TMP_Text tipText;
+    public Slider progressBar;
+
+    public AudioMixer audioMixer;
 
     private string[] tips = {
         "TIP: DON'T FORGET TO SAVE, BE RESPONSIBLE",
@@ -22,8 +25,25 @@ public class LoadingManager : MonoBehaviour
 
     private void Start()
     {
+        ApplySavedVolume();
         ShowRandomTip();
         StartCoroutine(LoadSceneAsync());
+    }
+
+    private void ApplySavedVolume()
+    {
+        var settings = DatabaseManager.Instance?.LoadSettings();
+        if (settings.HasValue)
+        {
+            float volumeValue = Mathf.Clamp01(settings.Value.volume / 100f);
+            float db = (volumeValue <= 0.0001f) ? -80f : Mathf.Log10(volumeValue) * 20f;
+            audioMixer.SetFloat("Volume", db);
+            Debug.Log("Applied volume in LoadingManager: " + db + " dB");
+        }
+        else
+        {
+            Debug.LogWarning("No saved volume found for LoadingManager.");
+        }
     }
 
     void ShowRandomTip()

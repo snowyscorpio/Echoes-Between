@@ -1,7 +1,14 @@
-﻿using System.IO;
-using UnityEngine;
+﻿using UnityEngine;
 using System.Data;
 using System.Data.SQLite;
+using System;
+using System.IO;
+
+public struct SessionData
+{
+    public Vector2 position;
+    public int levelDifficulty;
+}
 
 public class DatabaseManager : MonoBehaviour
 {
@@ -10,10 +17,7 @@ public class DatabaseManager : MonoBehaviour
 
     public static DatabaseManager Instance
     {
-        get
-        {
-            return instance;
-        }
+        get { return instance; }
     }
 
     private void Awake()
@@ -44,12 +48,57 @@ public class DatabaseManager : MonoBehaviour
         Debug.Log("Database initialized: " + dbPath);
     }
 
-    public IDbConnection GetConnection()
+    public SQLiteConnection GetConnection()
     {
-        IDbConnection connection = new SQLiteConnection(dbPath);
+        SQLiteConnection connection = new SQLiteConnection(dbPath);
         connection.Open();
         Debug.Log("Database connection opened.");
         return connection;
+    }
+
+    public SessionData? LoadSavedSessionData(int sessionId)
+    {
+        Debug.Log("Loading saved session data for session ID: " + sessionId);
+        using (var connection = GetConnection())
+        {
+            // SQL query to get the last saved level position and difficulty for given session ID
+            string query = "SELECT positionInLevel, levelDifficulty FROM levels WHERE sessionId = @id ORDER BY levelID DESC LIMIT 1";
+
+
+            using (var cmd = new SQLiteCommand(query, connection))
+            {
+                // Bind session ID parameter to SQL command to prevent SQL injection
+                cmd.Parameters.AddWithValue("@id", sessionId);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    // Check if the query returned a row
+                    if (reader.Read())
+                    {
+                        // Split the position string (e.g., '12.34,56.78') into x and y coordinates
+                        string[] posParts = reader.GetString(0).Split(',');
+                        // Validate that the split array has exactly 2 parts (x and y)
+                        if (posParts.Length == 2 &&
+                            // Convert x part to float
+                            float.TryParse(posParts[0], out float x) &&
+                            // Convert y part to float
+                            float.TryParse(posParts[1], out float y))
+                        {
+                            // Read level difficulty from second column in result
+                            int level = reader.GetInt32(1);
+                            // Return the session data with parsed position and level difficulty
+                            return new SessionData
+                            {
+                                position = new Vector2(x, y),
+                                levelDifficulty = level
+                            };
+                        }
+
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public DataTable GetAllSessions()
@@ -57,11 +106,14 @@ public class DatabaseManager : MonoBehaviour
         Debug.Log("Fetching all sessions from database...");
         using (IDbConnection connection = GetConnection())
         {
+            // Create command object to hold SQL query
             IDbCommand command = connection.CreateCommand();
             command.CommandText = "SELECT * FROM Sessions";
+            // Execute the query and obtain a reader to fetch results
             IDataReader reader = command.ExecuteReader();
 
             DataTable table = new DataTable();
+            // Load all result rows into a DataTable for use in UI or logic
             table.Load(reader);
             Debug.Log("Loaded " + table.Rows.Count + " session(s) from database.");
             return table;
@@ -73,14 +125,17 @@ public class DatabaseManager : MonoBehaviour
         Debug.Log("Adding new session: " + name);
         using (IDbConnection connection = GetConnection())
         {
+            // Create command object to hold SQL query
             IDbCommand command = connection.CreateCommand();
             command.CommandText = "INSERT INTO Sessions (sessionName, dateOfLastSave) VALUES (@name, datetime('now'))";
 
+            // Create a parameter to bind the session name into the SQL insert query
             var nameParam = command.CreateParameter();
             nameParam.ParameterName = "@name";
             nameParam.Value = name;
             command.Parameters.Add(nameParam);
 
+            // Execute the insert/update/delete command that does not return results
             command.ExecuteNonQuery();
             Debug.Log("Session added to database.");
         }
@@ -91,6 +146,7 @@ public class DatabaseManager : MonoBehaviour
         Debug.Log("Deleting session ID: " + sessionId);
         using (IDbConnection connection = GetConnection())
         {
+            // Create command object to hold SQL query
             IDbCommand command = connection.CreateCommand();
             command.CommandText = "DELETE FROM Sessions WHERE sessionID = @id";
 
@@ -99,6 +155,7 @@ public class DatabaseManager : MonoBehaviour
             idParam.Value = sessionId;
             command.Parameters.Add(idParam);
 
+            // Execute the insert/update/delete command that does not return results
             command.ExecuteNonQuery();
             Debug.Log("Session deleted from database.");
         }
@@ -109,9 +166,11 @@ public class DatabaseManager : MonoBehaviour
         Debug.Log("Updating session ID " + sessionId + " with new name: " + newName);
         using (IDbConnection connection = GetConnection())
         {
+            // Create command object to hold SQL query
             IDbCommand command = connection.CreateCommand();
             command.CommandText = "UPDATE Sessions SET sessionName = @name WHERE sessionID = @id";
 
+            // Create a parameter to bind the session name into the SQL insert query
             var nameParam = command.CreateParameter();
             nameParam.ParameterName = "@name";
             nameParam.Value = newName;
@@ -122,6 +181,7 @@ public class DatabaseManager : MonoBehaviour
             idParam.Value = sessionId;
             command.Parameters.Add(idParam);
 
+            // Execute the insert/update/delete command that does not return results
             command.ExecuteNonQuery();
             Debug.Log("Session name updated in database.");
         }
@@ -132,6 +192,7 @@ public class DatabaseManager : MonoBehaviour
         Debug.Log("Saving settings: Resolution=" + resolution + ", Graphics=" + graphics + ", Volume=" + volume);
         using (IDbConnection connection = GetConnection())
         {
+            // Create command object to hold SQL query
             IDbCommand command = connection.CreateCommand();
             command.CommandText = @"
             DELETE FROM Settings;
@@ -153,6 +214,7 @@ public class DatabaseManager : MonoBehaviour
             volumeParam.Value = volume;
             command.Parameters.Add(volumeParam);
 
+            // Execute the insert/update/delete command that does not return results
             command.ExecuteNonQuery();
             Debug.Log("Settings saved to database.");
         }
@@ -163,11 +225,13 @@ public class DatabaseManager : MonoBehaviour
         Debug.Log("Loading settings from database...");
         using (IDbConnection connection = GetConnection())
         {
+            // Create command object to hold SQL query
             IDbCommand command = connection.CreateCommand();
             command.CommandText = "SELECT resolution, graphics, volume FROM Settings LIMIT 1";
 
             using (IDataReader reader = command.ExecuteReader())
             {
+                // Check if the query returned a row
                 if (reader.Read())
                 {
                     string resolution = reader.GetString(0);
@@ -175,6 +239,7 @@ public class DatabaseManager : MonoBehaviour
                     int volume = reader.GetInt32(2);
 
                     Debug.Log("Settings loaded: Resolution=" + resolution + ", Graphics=" + graphics + ", Volume=" + volume);
+                    // Return the loaded settings as a tuple
                     return (resolution, graphics, volume);
                 }
                 else

@@ -33,7 +33,6 @@ public class DialogueManager : MonoBehaviour
     public TMP_Text endTitleText;
     public TMP_Text endSubtitleText;
 
-
     private CanvasGroup skipCanvasGroup;
     private Coroutine blinkCoroutine;
 
@@ -44,28 +43,50 @@ public class DialogueManager : MonoBehaviour
     private DialogueLine currentLine;
 
     public static bool IsDialogueActive = false;
-
     private const int playerID = 1;
 
     void Start()
     {
         dialoguePanel.SetActive(false);
         if (skipText != null) skipText.SetActive(false);
+
+        GameManager.Instance.SetLevelDifficultyFromScene();
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.SetLevelDifficultyFromScene();
+
+            try
+            {
+                GameManager.Instance.LoadDialogueFlagFromDB();
+
+                if (GameManager.Instance.HasSeenDialogue)
+                {
+                    Debug.Log("Dialogue already seen – skipping.");
+                    return;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning("Dialogue flag not loaded – probably running scene directly. " + ex.Message);
+            }
+        }
+
+        if (GameManager.Instance.HasSeenDialogue)
+        {
+            Debug.Log("Dialogue already seen ? skipping.");
+            return;
+        }
+
         StartCoroutine(DelayedDialogueStart());
     }
 
     IEnumerator DelayedDialogueStart()
     {
         yield return new WaitForSeconds(1f);
-
-
-        GameManager.Instance.SetLevelDifficultyFromScene();
-
         int currentLevel = GameManager.Instance.LevelDifficulty;
         Debug.Log("DialogueManager: Using LevelDifficulty = " + currentLevel);
         LoadDialogue(currentLevel);
     }
-
 
     void Update()
     {
@@ -89,12 +110,8 @@ public class DialogueManager : MonoBehaviour
         if (skipText != null)
         {
             skipText.SetActive(true);
-            skipCanvasGroup = skipText.GetComponent<CanvasGroup>();
-            if (skipCanvasGroup == null)
-                skipCanvasGroup = skipText.AddComponent<CanvasGroup>();
-
-            if (blinkCoroutine != null)
-                StopCoroutine(blinkCoroutine);
+            skipCanvasGroup = skipText.GetComponent<CanvasGroup>() ?? skipText.AddComponent<CanvasGroup>();
+            if (blinkCoroutine != null) StopCoroutine(blinkCoroutine);
             blinkCoroutine = StartCoroutine(BlinkSkipText());
         }
 
@@ -106,13 +123,12 @@ public class DialogueManager : MonoBehaviour
 
         using (IDbConnection connection = DatabaseManager.Instance.GetConnection())
         {
-            // Load NPC
             IDbCommand npcCmd = connection.CreateCommand();
             npcCmd.CommandText = @"
-            SELECT characterID, characterName, characterAppearance
-            FROM Characters
-            WHERE characterID != @playerID AND levelDifficulty = @level
-            LIMIT 1";
+                SELECT characterID, characterName, characterAppearance
+                FROM Characters
+                WHERE characterID != @playerID AND levelDifficulty = @level
+                LIMIT 1";
 
             var playerParam = npcCmd.CreateParameter();
             playerParam.ParameterName = "@playerID";
@@ -130,79 +146,58 @@ public class DialogueManager : MonoBehaviour
                 {
                     npc = new CharacterData
                     {
-                        ID = reader.GetInt32(reader.GetOrdinal("characterID")),
-                        Name = reader.GetString(reader.GetOrdinal("characterName")),
-                        ImagePath = reader.GetString(reader.GetOrdinal("characterAppearance"))
+                        ID = reader.GetInt32(0),
+                        Name = reader.GetString(1),
+                        ImagePath = reader.GetString(2)
                     };
                     npcID = npc.ID;
-                    Debug.Log("NPC found: ID = " + npcID + ", Name = " + npc.Name);
+                    Debug.Log("NPC found: " + npc.Name);
                 }
                 else
                 {
-                    Debug.LogWarning("No NPC found for level " + levelDifficulty);
+                    Debug.LogWarning("No NPC found.");
                     dialoguePanel.SetActive(false);
                     if (skipText != null) skipText.SetActive(false);
                     return;
                 }
             }
 
-            // Load Player (characterID = 1, always)
             IDbCommand playerCmd = connection.CreateCommand();
-            playerCmd.CommandText = @"
-            SELECT characterName, characterAppearance
-            FROM Characters
-            WHERE characterID = @id";
-
+            playerCmd.CommandText = "SELECT characterName, characterAppearance FROM Characters WHERE characterID = @id";
             var pid = playerCmd.CreateParameter();
             pid.ParameterName = "@id";
             pid.Value = playerID;
             playerCmd.Parameters.Add(pid);
 
-            try
+            using (IDataReader pReader = playerCmd.ExecuteReader())
             {
-                using (IDataReader pReader = playerCmd.ExecuteReader())
+                if (pReader.Read())
                 {
-                    if (pReader.Read())
+                    player = new CharacterData
                     {
-                        player = new CharacterData
-                        {
-                            ID = playerID,
-                            Name = pReader.GetString(0),
-                            ImagePath = pReader.GetString(1)
-                        };
-                    }
-                    else
+                        ID = playerID,
+                        Name = pReader.GetString(0),
+                        ImagePath = pReader.GetString(1)
+                    };
+                }
+                else
+                {
+                    player = new CharacterData
                     {
-                        Debug.LogWarning("Player not found in Characters table. Using default fallback.");
-                        player = new CharacterData
-                        {
-                            ID = playerID,
-                            Name = "Player",
-                            ImagePath = "Portraits/Unknown"
-                        };
-                    }
+                        ID = playerID,
+                        Name = "Player",
+                        ImagePath = "Portraits/Unknown"
+                    };
                 }
             }
-            catch (System.Exception ex)
-            {
-                Debug.LogError("Failed to load Player character. Error: " + ex.Message);
-                player = new CharacterData
-                {
-                    ID = playerID,
-                    Name = "Player",
-                    ImagePath = "Portraits/Unknown"
-                };
-            }
 
-            // Load sentences
             IDbCommand sentenceCmd = connection.CreateCommand();
             sentenceCmd.CommandText = @"
-            SELECT ProviderID, Sentence
-            FROM Sentences
-            WHERE 
-                (ProviderID = @playerID AND ReceiverID = @npcID)
-             OR (ProviderID = @npcID AND ReceiverID = @playerID)
-            ORDER BY conversationID ASC";
+                SELECT ProviderID, Sentence
+                FROM Sentences
+                WHERE (ProviderID = @playerID AND ReceiverID = @npcID)
+                   OR (ProviderID = @npcID AND ReceiverID = @playerID)
+                ORDER BY conversationID ASC";
 
             var npcParam = sentenceCmd.CreateParameter();
             npcParam.ParameterName = "@npcID";
@@ -218,40 +213,26 @@ public class DialogueManager : MonoBehaviour
             {
                 while (sReader.Read())
                 {
-                    int provider = sReader.GetInt32(0);
-                    string text = sReader.GetString(1);
-
                     dialogueQueue.Enqueue(new DialogueLine
                     {
-                        ProviderID = provider,
-                        Text = text
+                        ProviderID = sReader.GetInt32(0),
+                        Text = sReader.GetString(1)
                     });
                 }
             }
 
-            // Set NPC UI
             npcNameText.text = npc.Name;
-            var npcSprite = Resources.Load<Sprite>(npc.ImagePath);
-            if (npcSprite == null)
-                Debug.LogWarning("Could not load NPC image: " + npc.ImagePath);
-            npcImage.sprite = npcSprite != null ? npcSprite : Resources.Load<Sprite>("Portraits/Unknown");
+            npcImage.sprite = Resources.Load<Sprite>(npc.ImagePath) ?? Resources.Load<Sprite>("Portraits/Unknown");
 
-            // Set Player UI
             playerNameText.text = player.Name;
-            var playerSprite = Resources.Load<Sprite>(player.ImagePath);
-            if (playerSprite == null)
-                Debug.LogWarning("Could not load Player image: " + player.ImagePath);
-            playerImage.sprite = playerSprite != null ? playerSprite : Resources.Load<Sprite>("Portraits/Unknown");
+            playerImage.sprite = Resources.Load<Sprite>(player.ImagePath) ?? Resources.Load<Sprite>("Portraits/Unknown");
 
-            // Start dialogue
             DisablePlayer();
             isDialogueActive = true;
             IsDialogueActive = true;
             ShowNextLine();
         }
     }
-
-
 
     void ShowNextLine()
     {
@@ -262,34 +243,31 @@ public class DialogueManager : MonoBehaviour
         }
 
         currentLine = dialogueQueue.Dequeue();
-        bool isPlayerSpeaking = currentLine.ProviderID == playerID;
+        bool isPlayer = currentLine.ProviderID == playerID;
 
+        playerFrame.SetActive(isPlayer);
+        playerFrameBackground.SetActive(isPlayer);
+        playerNameText.gameObject.SetActive(isPlayer);
+        playerImage.gameObject.SetActive(isPlayer);
+        playerSentenceText.text = "";
 
-        playerFrame.SetActive(isPlayerSpeaking);
-        playerFrameBackground.SetActive(isPlayerSpeaking);
-        playerNameText.gameObject.SetActive(isPlayerSpeaking);
-        playerImage.gameObject.SetActive(isPlayerSpeaking);
-        playerSentenceText.text = isPlayerSpeaking ? "" : "";
-
-        npcFrame.SetActive(!isPlayerSpeaking);
-        npcFrameBackground.SetActive(!isPlayerSpeaking);
-        npcNameText.gameObject.SetActive(!isPlayerSpeaking);
-        npcImage.gameObject.SetActive(!isPlayerSpeaking);
-        npcSentenceText.text = !isPlayerSpeaking ? "" : "";
+        npcFrame.SetActive(!isPlayer);
+        npcFrameBackground.SetActive(!isPlayer);
+        npcNameText.gameObject.SetActive(!isPlayer);
+        npcImage.gameObject.SetActive(!isPlayer);
+        npcSentenceText.text = "";
 
         typingCoroutine = StartCoroutine(TypeSentence(currentLine));
     }
 
-
     IEnumerator TypeSentence(DialogueLine line)
     {
         isTyping = true;
-        string sentence = line.Text;
-        TMP_Text targetText = line.ProviderID == playerID ? playerSentenceText : npcSentenceText;
+        TMP_Text target = line.ProviderID == playerID ? playerSentenceText : npcSentenceText;
 
-        for (int i = 0; i <= sentence.Length; i++)
+        for (int i = 0; i <= line.Text.Length; i++)
         {
-            targetText.text = sentence.Substring(0, i);
+            target.text = line.Text.Substring(0, i);
             yield return new WaitForSeconds(0.02f);
         }
 
@@ -299,8 +277,8 @@ public class DialogueManager : MonoBehaviour
     void CompleteTyping(DialogueLine line)
     {
         isTyping = false;
-        TMP_Text targetText = line.ProviderID == playerID ? playerSentenceText : npcSentenceText;
-        targetText.text = line.Text;
+        TMP_Text target = line.ProviderID == playerID ? playerSentenceText : npcSentenceText;
+        target.text = line.Text;
     }
 
     void EndDialogue()
@@ -309,57 +287,68 @@ public class DialogueManager : MonoBehaviour
         IsDialogueActive = false;
 
         if (skipText != null) skipText.SetActive(false);
-        if (blinkCoroutine != null)
+        if (blinkCoroutine != null) StopCoroutine(blinkCoroutine);
+
+        using (IDbConnection connection = DatabaseManager.Instance.GetConnection())
         {
-            StopCoroutine(blinkCoroutine);
-            blinkCoroutine = null;
+            IDbCommand cmd = connection.CreateCommand();
+            cmd.CommandText = @"
+            UPDATE Levels
+            SET hasSeenDialogue = 1
+            WHERE sessionID = @sessionID AND levelDifficulty = @level";
+
+            var sessionParam = cmd.CreateParameter();
+            sessionParam.ParameterName = "@sessionID";
+            sessionParam.Value = GameManager.Instance.CurrentSessionID;
+            cmd.Parameters.Add(sessionParam);
+
+            var levelParam = cmd.CreateParameter();
+            levelParam.ParameterName = "@level";
+            levelParam.Value = GameManager.Instance.LevelDifficulty;
+            cmd.Parameters.Add(levelParam);
+
+            cmd.ExecuteNonQuery();
         }
 
         if (GameManager.Instance.LevelDifficulty == 4)
-        {
             StartCoroutine(ShowEndScreenAndReturn());
-        }
         else
         {
             dialoguePanel.SetActive(false);
             EnablePlayer();
+
+            if (GameManager.Instance != null)
+            {
+                Vector2 spawnPos = new Vector2(-4.75f, -2.04f);
+                SaveManager.SaveLevelAuto(spawnPos);
+                Debug.Log("[DialogueManager] Auto-saved fixed spawn after dialogue.");
+            }
         }
     }
 
     IEnumerator ShowEndScreenAndReturn()
     {
         dialoguePanel.SetActive(false);
+        endScreenCanvas.SetActive(true);
+        endScreenCanvasGroup.alpha = 0f;
 
-        if (endScreenCanvas != null)
+        endTitleText.text = "THE END";
+        endSubtitleText.text = "Be a good human, enjoy life.";
+
+        foreach (var ps in Object.FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None))
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+        float timer = 0f;
+        while (timer < 2f)
         {
-            endScreenCanvas.SetActive(true);
-            endScreenCanvasGroup.alpha = 0f;
-
-            endTitleText.text = "THE END";
-            endSubtitleText.text = "Be a good human, enjoy life.";
-
-            ParticleSystem[] allParticles = Object.FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None);
-            foreach (var ps in allParticles)
-            {
-                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            }
-
-            float duration = 2f;
-            float timer = 0f;
-
-            while (timer < duration)
-            {
-                timer += Time.deltaTime;
-                endScreenCanvasGroup.alpha = Mathf.Lerp(0f, 1f, timer / duration);
-                yield return null;
-            }
-
-            yield return new WaitForSeconds(7f);
-
-            UnityEngine.SceneManagement.SceneManager.LoadScene(2);
+            timer += Time.deltaTime;
+            endScreenCanvasGroup.alpha = Mathf.Lerp(0f, 1f, timer / 2f);
+            yield return null;
         }
-    }
 
+        yield return new WaitForSeconds(7f);
+        UnityEngine.SceneManagement.SceneManager.LoadScene(2);
+    }
 
     IEnumerator BlinkSkipText()
     {
@@ -375,23 +364,15 @@ public class DialogueManager : MonoBehaviour
     void DisablePlayer()
     {
         var player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            var move = player.GetComponent<PlayerMovement>();
-            if (move != null)
-                move.enabled = false;
-        }
+        if (player?.GetComponent<PlayerMovement>() != null)
+            player.GetComponent<PlayerMovement>().enabled = false;
     }
 
     void EnablePlayer()
     {
         var player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            var move = player.GetComponent<PlayerMovement>();
-            if (move != null)
-                move.enabled = true;
-        }
+        if (player?.GetComponent<PlayerMovement>() != null)
+            player.GetComponent<PlayerMovement>().enabled = true;
     }
 
     class CharacterData

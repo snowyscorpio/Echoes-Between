@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Audio;
 
@@ -11,6 +11,8 @@ public class MusicManager : MonoBehaviour
     private AudioClip sessionMusic;
 
     private string[] sessionScenes = { "Level_1", "Level_2", "Level_3", "Level_4", "Cutscene", "Loading" };
+
+    private AudioMixer audioMixer;
 
     void Awake()
     {
@@ -27,11 +29,10 @@ public class MusicManager : MonoBehaviour
         audioSource.loop = true;
         audioSource.playOnAwake = false;
 
-        // Connect to AudioMixer
-        AudioMixer mixer = Resources.Load<AudioMixer>("MainAudioMixer");
-        if (mixer != null)
+        audioMixer = Resources.Load<AudioMixer>("MainAudioMixer");
+        if (audioMixer != null)
         {
-            AudioMixerGroup[] groups = mixer.FindMatchingGroups("Master");
+            AudioMixerGroup[] groups = audioMixer.FindMatchingGroups("Master");
             if (groups.Length > 0)
             {
                 audioSource.outputAudioMixerGroup = groups[0];
@@ -56,6 +57,8 @@ public class MusicManager : MonoBehaviour
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        ApplySavedVolume();
+
         if (IsSessionScene(scene.name))
         {
             PlaySessionMusic();
@@ -91,6 +94,22 @@ public class MusicManager : MonoBehaviour
         {
             audioSource.clip = sessionMusic;
             audioSource.Play();
+        }
+    }
+
+    void ApplySavedVolume()
+    {
+        var settings = DatabaseManager.Instance?.LoadSettings();
+        if (settings.HasValue)
+        {
+            float volumeValue = Mathf.Clamp01(settings.Value.volume / 100f);
+            float db = (volumeValue <= 0.0001f) ? -80f : Mathf.Log10(volumeValue) * 20f;
+            audioMixer.SetFloat("Volume", db);
+            Debug.Log("Applied volume from saved settings: " + db + " dB");
+        }
+        else
+        {
+            Debug.LogWarning("No saved volume found in DB to apply.");
         }
     }
 }

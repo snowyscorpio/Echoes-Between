@@ -1,111 +1,156 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Data;
 
 public class GameManager : MonoBehaviour
 {
-    private static GameManager instance;
+    public static GameManager Instance { get; private set; }
 
-    public static GameManager Instance
+    private int currentSessionId;
+    public int CurrentSessionID
     {
-        get
-        {
-            if (instance == null)
-            {
-                GameObject go = new GameObject("GameManager");
-                instance = go.AddComponent<GameManager>();
-                DontDestroyOnLoad(go);
-                Debug.Log("GameManager Instance created dynamically");
-            }
-            return instance;
-        }
+        get => currentSessionId;
+        set => currentSessionId = value;
     }
 
-    public int CurrentSessionID { get; set; }
-    public int CurrentLevelID { get; set; }
-    public int LevelDifficulty { get; set; }
-    public string PendingStartPosition { get; set; }
+    public Vector2? LastSavedPositionForSession { get; private set; }
+    public int LevelDifficulty { get; private set; }
     public string LastSceneBeforeOptions { get; set; }
+    public Vector2? PendingStartPosition { get; set; }
+    public bool HasSeenDialogue { get; private set; }
 
-    private void Awake()
+    // Unity's Awake is called when the GameManager object is created
+    // This sets up the singleton instance and prevents destruction across scenes
+    void Awake()
     {
-        if (instance == null)
+        // If there is no existing instance, set this as the instance
+        if (Instance == null)
         {
-            instance = this;
+            Instance = this;
+            // Prevent GameManager from being destroyed when loading a new scene
             DontDestroyOnLoad(gameObject);
-            Debug.Log("GameManager initialized from scene");
         }
-        else if (instance != this)
+        // If no data was found, log an error message
+        else
         {
-            Debug.LogWarning("Duplicate GameManager detected and destroyed");
+            // Destroy duplicate GameManager instances to enforce singleton
             Destroy(gameObject);
         }
     }
 
-    private void Start()
+    // Load session data (position and level difficulty) from the database
+    public void LoadSession(int sessionId)
     {
-        SetLevelDifficultyFromScene();
+        // Query the database for session data using the given sessionId
+        var sessionData = DatabaseManager.Instance.LoadSavedSessionData(sessionId);
+        // If session data was found, update internal state and load the level scene
+        if (sessionData.HasValue)
+        {
+            // Store loaded player position
+            LastSavedPositionForSession = sessionData.Value.position;
+            // Store the difficulty of the loaded level
+            LevelDifficulty = sessionData.Value.levelDifficulty;
+            CurrentSessionID = sessionId;
+
+            string sceneName = $"Level_{LevelDifficulty}";
+            Debug.Log($"[GameManager] Loading scene: {sceneName} for session ID: {sessionId}");
+
+            // Load the level scene based on its difficulty
+            SceneManager.LoadScene(sceneName);
+        }
+        // If no data was found, log an error message
+        else
+        {
+            Debug.LogError("No saved data found for session ID: " + sessionId);
+        }
     }
 
+    // Get the saved start position if available, or return a default spawn location
+    public Vector2 GetStartPosition()
+    {
+        return LastSavedPositionForSession ?? new Vector2(-4.75f, -2.04f); // Default spawn
+    }
+
+    // Derive the difficulty level by parsing the current scene's name
     public void SetLevelDifficultyFromScene()
     {
         string sceneName = SceneManager.GetActiveScene().name;
-        if (sceneName.StartsWith("Level_"))
+        // Check if scene name follows the format 'Level_X'
+        if (sceneName.StartsWith("Level_") && int.TryParse(sceneName.Substring(6), out int difficulty))
         {
-            string numberStr = sceneName.Replace("Level_", "");
-            if (int.TryParse(numberStr, out int levelNum))
+            LevelDifficulty = difficulty;
+            // Log the extracted level difficulty for debugging
+            Debug.Log("[GameManager] LevelDifficulty set to: " + LevelDifficulty);
+        }
+        // If no data was found, log an error message
+        else
+        {
+            Debug.LogWarning("Scene name does not match Level_X format: " + sceneName);
+        }
+    }
+
+    // Load the 'hasSeenDialogue' flag from the Levels table for this session and level
+    public void LoadDialogueFlagFromDB()
+    {
+        // Default the flag to false until proven otherwise
+        HasSeenDialogue = false;
+
+        using (IDbConnection connection = DatabaseManager.Instance.GetConnection())
+        {
+            IDbCommand cmd = connection.CreateCommand();
+            // SQL query to get hasSeenDialogue for this session and level
+            cmd.CommandText = @"
+            SELECT hasSeenDialogue 
+            FROM Levels 
+            WHERE sessionID = @sessionId AND levelDifficulty = @difficulty";
+
+            var sessionParam = cmd.CreateParameter();
+            sessionParam.ParameterName = "@sessionId";
+            sessionParam.Value = CurrentSessionID;
+            // Add parameters to prevent SQL injection
+            cmd.Parameters.Add(sessionParam);
+
+            var difficultyParam = cmd.CreateParameter();
+            difficultyParam.ParameterName = "@difficulty";
+            difficultyParam.Value = LevelDifficulty;
+            // Add parameters to prevent SQL injection
+            cmd.Parameters.Add(difficultyParam);
+
+            using (IDataReader reader = cmd.ExecuteReader())
             {
-                LevelDifficulty = levelNum;
-                Debug.Log("LevelDifficulty set to: " + LevelDifficulty);
+                // If a matching row is found, read and convert flag value
+                if (reader.Read())
+                {
+                    int flag = reader.GetInt32(0);
+                    // Set HasSeenDialogue to true if database value is 1
+                    HasSeenDialogue = flag == 1;
+                }
             }
         }
+    }
+
+    // Retrieve and store position/difficulty for this session without loading a scene
+    public void LoadSavedLevelPosition(int sessionId)
+    {
+        CurrentSessionID = sessionId;
+
+        // Query the database for session data using the given sessionId
+        var sessionData = DatabaseManager.Instance.LoadSavedSessionData(sessionId);
+        // If session data was found, update internal state and load the level scene
+        if (sessionData.HasValue)
+        {
+            // Store position to use later for spawning the player
+            PendingStartPosition = sessionData.Value.position;
+            // Store the difficulty of the loaded level
+            LevelDifficulty = sessionData.Value.levelDifficulty;
+            Debug.Log("[GameManager] Pending start position set from DB: " + PendingStartPosition.Value);
+        }
+        // If no data was found, log an error message
         else
         {
-            Debug.Log("Scene not matched for LevelDifficulty. Current: " + sceneName);
-        }
-    }
-
-    public Vector2 GetStartPosition()
-    {
-        if (string.IsNullOrEmpty(PendingStartPosition))
-        {
-            Debug.LogWarning("PendingStartPosition is null or empty. Defaulting to Vector2.zero");
-            return Vector2.zero;
-        }
-
-        string[] parts = PendingStartPosition.Split(',');
-        if (parts.Length == 2 &&
-            float.TryParse(parts[0], out float x) &&
-            float.TryParse(parts[1], out float y))
-        {
-            Vector2 result = new Vector2(x, y);
-            Debug.Log($"Start position parsed: {result}");
-            return result;
-        }
-
-        Debug.LogError($"Failed to parse PendingStartPosition: {PendingStartPosition}. Defaulting to Vector2.zero");
-        return Vector2.zero;
-    }
-
-    public void ClearPendingState()
-    {
-        Debug.Log("Clearing pending state (position, level ID, difficulty)");
-        PendingStartPosition = null;
-        CurrentLevelID = 0;
-        LevelDifficulty = 0;
-    }
-
-    public void LoadNextLevel()
-    {
-        if (CurrentLevelID >= 4)
-        {
-            Debug.Log("No more levels to load. Level_4 is the last one.");
-        }
-        else
-        {
-            int nextLevel = CurrentLevelID + 1;
-            Debug.Log($"Loading next level: Level_{nextLevel}");
-            CurrentLevelID = nextLevel;
-            SceneManager.LoadScene("Level_" + nextLevel);
+            // No saved position found in database, mark it as null
+            PendingStartPosition = null;
+            Debug.LogWarning("[GameManager] No saved position found in DB.");
         }
     }
 }

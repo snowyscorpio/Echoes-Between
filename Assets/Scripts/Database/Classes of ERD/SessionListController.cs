@@ -119,7 +119,7 @@ public class SessionListController : MonoBehaviour
         {
             Debug.LogWarning("Cannot add more sessions. Maximum limit reached.");
             if (errorText != null)
-                errorText.text = $"Cannot add session – limit of {maxSessions} reached.";
+                errorText.text = $"Cannot add session limit of {maxSessions} reached.";
             return;
         }
 
@@ -194,6 +194,8 @@ public class SessionListController : MonoBehaviour
 
     void LoadSession(int sessionId)
     {
+        Debug.Log($"[LoadSession] Loading session {sessionId}");
+
         if (!SystemSpaceChecker.HasEnoughDiskSpace())
         {
             if (noSpacePopup != null)
@@ -203,50 +205,24 @@ public class SessionListController : MonoBehaviour
 
         if (DatabaseManager.Instance == null || GameManager.Instance == null)
         {
-            Debug.LogError("Cannot load session – missing DatabaseManager or GameManager");
+            Debug.LogError("Cannot load session missing DatabaseManager or GameManager");
             return;
         }
 
-        using (IDbConnection connection = DatabaseManager.Instance.GetConnection())
+        GameManager.Instance.CurrentSessionID = sessionId;
+        GameManager.Instance.LoadSavedLevelPosition(sessionId);
+
+        if (GameManager.Instance.PendingStartPosition.HasValue && GameManager.Instance.LevelDifficulty > 0)
         {
-            IDbCommand command = connection.CreateCommand();
-            command.CommandText = "SELECT levelID, positionInLevel, levelDifficulty FROM Levels WHERE sessionID = @id ORDER BY levelID DESC LIMIT 1";
-
-            var idParam = command.CreateParameter();
-            idParam.ParameterName = "@id";
-            idParam.Value = sessionId;
-            command.Parameters.Add(idParam);
-
-            using (IDataReader reader = command.ExecuteReader())
-            {
-                if (reader.Read())
-                {
-                    string position = reader.IsDBNull(1) ? "0,0" : reader.GetString(1);
-                    int difficulty = reader.GetInt32(2);
-
-                    ApplySessionToGameManager(sessionId, difficulty, position, difficulty);
-
-                    // Use levelDifficulty to determine scene name
-                    LoadingManager.SceneToLoad = "Level_" + difficulty;
-                    SceneManager.LoadScene("Loading");
-                }
-                else
-                {
-                    // If no level data, fallback to Level_1
-                    ApplySessionToGameManager(sessionId, 1, "0,0", 1);
-                    LoadingManager.SceneToLoad = "Level_1";
-                    SceneManager.LoadScene("Loading");
-                }
-            }
+            Debug.Log("[LoadSession] Loaded saved level from DB");
+            LoadingManager.SceneToLoad = "Level_" + GameManager.Instance.LevelDifficulty;
+        }
+        else
+        {
+            Debug.Log("[LoadSession] No saved level found, starting from Cutscene");
+            LoadingManager.SceneToLoad = "Cutscene";
         }
 
-        void ApplySessionToGameManager(int sid, int lid, string pos, int diff)
-        {
-            GameManager.Instance.CurrentSessionID = sid;
-            GameManager.Instance.PendingStartPosition = pos;
-            GameManager.Instance.CurrentLevelID = lid;
-            GameManager.Instance.LevelDifficulty = diff;
-        }
+        SceneManager.LoadScene("Loading");
     }
-
 }

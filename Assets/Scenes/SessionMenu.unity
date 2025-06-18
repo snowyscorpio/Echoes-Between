@@ -1029,7 +1029,7 @@ MonoBehaviour:
   cancelAddButton: {fileID: 1178129934}
   errorText: {fileID: 1014536214}
   sessionListController: {fileID: 291050656}
-  noSpacePopup: {fileID: 0}
+  noSpacePopup: {fileID: 892766598}
 --- !u!1 &539831632
 GameObject:
   m_ObjectHideFlags: 0

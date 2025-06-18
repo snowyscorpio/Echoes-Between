@@ -18,8 +18,13 @@ public class SettingsManager : MonoBehaviour
 
     IEnumerator LoadSettingsDelayed()
     {
-        yield return null; 
+        yield return null;
 
+        ApplySavedSettings();
+    }
+
+    public void ApplySavedSettings()
+    {
         var settings = DatabaseManager.Instance?.LoadSettings();
         if (settings.HasValue)
         {
@@ -36,7 +41,7 @@ public class SettingsManager : MonoBehaviour
                 QualitySettings.SetQualityLevel(graphicsIndex);
 
             float volumeValue = Mathf.Clamp01(settings.Value.volume / 100f);
-            float db = Mathf.Log10(volumeValue) * 20f;
+            float db = (volumeValue <= 0.0001f) ? -80f : Mathf.Log10(volumeValue) * 20f;
             audioMixer.SetFloat("Volume", db);
 
             Debug.Log("Settings loaded and applied on startup.");
@@ -53,4 +58,5 @@ public class SettingsManager : MonoBehaviour
             Debug.LogWarning("No settings found in DB.");
         }
     }
+
 }

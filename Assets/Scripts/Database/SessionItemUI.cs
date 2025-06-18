@@ -48,6 +48,9 @@ public class SessionItemUI : MonoBehaviour, IPointerClickHandler
             selectionToggle.isOn = !selectionToggle.isOn;
             OnToggleValueChanged(selectionToggle.isOn);
         }
+
+        // סימולציית PointerClick כדי לאפשר לחיצה כפולה גם דרך הכפתור
+        ExecuteEvents.Execute(gameObject, new PointerEventData(EventSystem.current), ExecuteEvents.pointerClickHandler);
     }
 
     private void OnToggleValueChanged(bool isOn)
@@ -78,6 +81,7 @@ public class SessionItemUI : MonoBehaviour, IPointerClickHandler
 
         if (timeSinceLastClick <= doubleClickThreshold)
         {
+            Debug.Log("Double click detected on session ID: " + SessionId);
             OnSessionDoubleClick?.Invoke(SessionId);
         }
 
