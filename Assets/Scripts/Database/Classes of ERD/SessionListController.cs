@@ -210,19 +210,23 @@ public class SessionListController : MonoBehaviour
         }
 
         GameManager.Instance.CurrentSessionID = sessionId;
-        GameManager.Instance.LoadSavedLevelPosition(sessionId);
 
-        if (GameManager.Instance.PendingStartPosition.HasValue && GameManager.Instance.LevelDifficulty > 0)
+        var sessionData = DatabaseManager.Instance.LoadSavedSessionData(sessionId);
+
+        if (sessionData.HasValue)
         {
-            Debug.Log("[LoadSession] Loaded saved level from DB");
-            LoadingManager.SceneToLoad = "Level_" + GameManager.Instance.LevelDifficulty;
+            GameManager.Instance.ApplyLoadedSessionData(sessionData.Value.position, sessionData.Value.levelDifficulty);
+
+            Debug.Log("[LoadSession] Loaded saved data. Going to Level_" + sessionData.Value.levelDifficulty);
+            LoadingManager.SceneToLoad = "Level_" + sessionData.Value.levelDifficulty;
         }
         else
         {
-            Debug.Log("[LoadSession] No saved level found, starting from Cutscene");
+            Debug.Log("[LoadSession] No saved data found. Starting from Cutscene.");
             LoadingManager.SceneToLoad = "Cutscene";
         }
 
         SceneManager.LoadScene("Loading");
     }
+
 }

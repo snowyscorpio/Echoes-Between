@@ -36,8 +36,7 @@ INSERT INTO "Characters" ("characterID","characterName","characterAppearance","l
  (3,'Roxy','Portraits/Roxy Portrait',2),
  (4,'Clair','Portraits/Clair Portrait',3),
  (5,'Future Self','Portraits/PlayerOld Portrait',4);
-INSERT INTO "Levels" ("levelID","positionInLevel","levelDifficulty","sessionID","hasSeenDialogue") VALUES (1,'7.24,0.41',1,24,1),
- (2,'39.11,0.54',1,26,1);
+INSERT INTO "Levels" ("levelID","positionInLevel","levelDifficulty","sessionID","hasSeenDialogue") VALUES (1,'-4.75,-2.04',1,34,0);
 INSERT INTO "Sentences" ("conversationID","ProviderID","ReceiverID","Sentence") VALUES (1,2,1,'Whoa! What was that light?! I’ve never seen anything like it!'),
  (2,2,1,'My cousin said this door stopped working in dinosaur times... are you a dinosaur?'),
  (3,1,2,'I... fell.. Where am i?'),
@@ -65,8 +64,6 @@ INSERT INTO "Sentences" ("conversationID","ProviderID","ReceiverID","Sentence") 
  (25,5,1,'You’d be amazed at how many kind souls you’ll meet along the journey.'),
  (26,5,1,'Each walking their own road, in their own rhythm, quietly succeeding in their own unique way.');
 INSERT INTO "Sessions" ("sessionID","sessionName","dateOfLastSave") VALUES (1,'amen','2025-05-31 09:29:11'),
- (24,'try6','2025-06-11 16:09:21'),
- (25,'aaaaaaaaaaaaaaa','2025-06-11 22:51:37'),
- (26,'try111','2025-06-12 19:30:32');
-INSERT INTO "Settings" ("settingsID","graphics","resolution","volume") VALUES (39,'Ultra','1920x1080',7);
+ (34,'amen2','2025-06-20 21:46:31');
+INSERT INTO "Settings" ("settingsID","graphics","resolution","volume") VALUES (44,'Ultra','1920x1080',0);
 COMMIT;

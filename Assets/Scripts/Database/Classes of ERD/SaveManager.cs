@@ -134,7 +134,8 @@ public class SaveManager : MonoBehaviour
         }
 
         string positionStr = position.x.ToString("F2") + "," + position.y.ToString("F2");
-        int hasSeen = isManual ? 1 : 0;
+        int hasSeen = GameManager.Instance.HasSeenDialogue ? 1 : 0;
+
 
         using (IDbConnection connection = DatabaseManager.Instance.GetConnection())
         {
@@ -151,6 +152,7 @@ public class SaveManager : MonoBehaviour
                 UPDATE Levels 
                 SET positionInLevel = @position, levelDifficulty = @difficulty, hasSeenDialogue = @hasSeen
                 WHERE sessionID = @sessionId";
+
 
                 updateCmd.Parameters.Add(CreateParam(updateCmd, "@position", positionStr));
                 updateCmd.Parameters.Add(CreateParam(updateCmd, "@difficulty", difficulty));

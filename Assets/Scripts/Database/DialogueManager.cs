@@ -281,42 +281,67 @@ public class DialogueManager : MonoBehaviour
         target.text = line.Text;
     }
 
+
     void EndDialogue()
     {
+        // Mark the dialogue as no longer active
         isDialogueActive = false;
         IsDialogueActive = false;
 
+        // Hide the "Press to skip" text and stop its blinking animation
         if (skipText != null) skipText.SetActive(false);
         if (blinkCoroutine != null) StopCoroutine(blinkCoroutine);
 
+        // Get current session ID from GameManager
+        int sessionId = GameManager.Instance.CurrentSessionID;
+
+        Debug.Log($"[EndDialogue] Trying to update hasSeenDialogue to 1 for sessionID={sessionId}");
+
+        // Open connection to database and update hasSeenDialogue
         using (IDbConnection connection = DatabaseManager.Instance.GetConnection())
         {
             IDbCommand cmd = connection.CreateCommand();
+
+            // Update hasSeenDialogue to 1 for this session
             cmd.CommandText = @"
             UPDATE Levels
             SET hasSeenDialogue = 1
-            WHERE sessionID = @sessionID AND levelDifficulty = @level";
+            WHERE sessionID = @sessionID";
 
             var sessionParam = cmd.CreateParameter();
             sessionParam.ParameterName = "@sessionID";
-            sessionParam.Value = GameManager.Instance.CurrentSessionID;
+            sessionParam.Value = sessionId;
             cmd.Parameters.Add(sessionParam);
 
-            var levelParam = cmd.CreateParameter();
-            levelParam.ParameterName = "@level";
-            levelParam.Value = GameManager.Instance.LevelDifficulty;
-            cmd.Parameters.Add(levelParam);
+            // Execute the update
+            int rowsAffected = cmd.ExecuteNonQuery();
+            Debug.Log($"[EndDialogue] Rows affected by update: {rowsAffected}");
 
-            cmd.ExecuteNonQuery();
+            if (rowsAffected == 0)
+            {
+                // No row found to update
+                Debug.LogWarning("[EndDialogue] Update failed: no matching row found in Levels table.");
+            }
+            else
+            {
+                // Successfully updated, set in GameManager memory too
+                GameManager.Instance.HasSeenDialogue = true;
+                Debug.Log("[EndDialogue] hasSeenDialogue is now set to 1 in GameManager.");
+            }
         }
 
+        // If this is the final level, show the ending screen
         if (GameManager.Instance.LevelDifficulty == 4)
+        {
             StartCoroutine(ShowEndScreenAndReturn());
+        }
         else
         {
+            // Otherwise, close dialogue panel and re-enable player control
             dialoguePanel.SetActive(false);
             EnablePlayer();
 
+            // Save the player's fixed spawn position after dialogue
             if (GameManager.Instance != null)
             {
                 Vector2 spawnPos = new Vector2(-4.75f, -2.04f);
@@ -325,6 +350,8 @@ public class DialogueManager : MonoBehaviour
             }
         }
     }
+
+
 
     IEnumerator ShowEndScreenAndReturn()
     {

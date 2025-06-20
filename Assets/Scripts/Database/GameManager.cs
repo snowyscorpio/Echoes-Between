@@ -17,7 +17,7 @@ public class GameManager : MonoBehaviour
     public int LevelDifficulty { get; private set; }
     public string LastSceneBeforeOptions { get; set; }
     public Vector2? PendingStartPosition { get; set; }
-    public bool HasSeenDialogue { get; private set; }
+    public bool HasSeenDialogue { get; set; }
 
     // Unity's Awake is called when the GameManager object is created
     // This sets up the singleton instance and prevents destruction across scenes
@@ -129,28 +129,63 @@ public class GameManager : MonoBehaviour
         }
     }
 
+
+    public void ApplyLoadedSessionData(Vector2 position, int difficulty)
+    {
+        LastSavedPositionForSession = position;
+        PendingStartPosition = position;
+        LevelDifficulty = difficulty;
+    }
+
+
     // Retrieve and store position/difficulty for this session without loading a scene
     public void LoadSavedLevelPosition(int sessionId)
     {
+        // Store the session ID in the GameManager
         CurrentSessionID = sessionId;
 
         // Query the database for session data using the given sessionId
         var sessionData = DatabaseManager.Instance.LoadSavedSessionData(sessionId);
-        // If session data was found, update internal state and load the level scene
+
+        // If we found saved data in the database
         if (sessionData.HasValue)
         {
-            // Store position to use later for spawning the player
-            PendingStartPosition = sessionData.Value.position;
-            // Store the difficulty of the loaded level
-            LevelDifficulty = sessionData.Value.levelDifficulty;
-            Debug.Log("[GameManager] Pending start position set from DB: " + PendingStartPosition.Value);
+            int savedDifficulty = sessionData.Value.levelDifficulty;
+            string currentSceneName = SceneManager.GetActiveScene().name;
+
+            // Check if the current scene name matches the pattern "Level_X"
+            if (currentSceneName.StartsWith("Level_") &&
+                int.TryParse(currentSceneName.Substring(6), out int currentDifficulty))
+            {
+                // If the saved difficulty matches the current scene's difficulty
+                if (savedDifficulty == currentDifficulty)
+                {
+                    // Use the saved position to spawn the player
+                    PendingStartPosition = sessionData.Value.position;
+                    LastSavedPositionForSession = sessionData.Value.position;
+                    LevelDifficulty = savedDifficulty;
+
+                    Debug.Log("[GameManager] Loaded saved position for matching level: " + PendingStartPosition.Value);
+                    return;
+                }
+                else
+                {
+                    // If difficulties do not match, skip loading the saved position
+                    Debug.LogWarning($"[GameManager] Saved data found but difficulty {savedDifficulty} does not match current scene {currentDifficulty}. Ignoring saved position.");
+                }
+            }
+            else
+            {
+                // If scene name is not in the expected format
+                Debug.LogWarning("[GameManager] Current scene name is not in 'Level_X' format: " + currentSceneName);
+            }
         }
-        // If no data was found, log an error message
-        else
-        {
-            // No saved position found in database, mark it as null
-            PendingStartPosition = null;
-            Debug.LogWarning("[GameManager] No saved position found in DB.");
-        }
+
+        // No valid saved data found or mismatch – reset position to null so player spawns at default spawn point
+        PendingStartPosition = null;
+        LastSavedPositionForSession = null;
+        Debug.LogWarning("[GameManager] No valid saved position loaded for this level. Using default spawn.");
     }
+
+
 }

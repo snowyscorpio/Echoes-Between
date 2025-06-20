@@ -21,6 +21,8 @@ public class PlayerMovement : MonoBehaviour
 
     void Start()
     {
+        levelStartPosition = new Vector2(-4.75f, -2.04f);
+
         if (GameManager.Instance != null && GameManager.Instance.LastSavedPositionForSession.HasValue)
         {
             transform.position = new Vector3(GameManager.Instance.LastSavedPositionForSession.Value.x,

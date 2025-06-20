@@ -141,25 +141,48 @@ public class DatabaseManager : MonoBehaviour
         }
     }
 
+
+    // Deletes a session and its related level saves from the database.
     public void DeleteSession(int sessionId)
     {
         Debug.Log("Deleting session ID: " + sessionId);
+
+        // Open a connection to the database
         using (IDbConnection connection = GetConnection())
         {
-            // Create command object to hold SQL query
-            IDbCommand command = connection.CreateCommand();
-            command.CommandText = "DELETE FROM Sessions WHERE sessionID = @id";
+            //Delete related level saves
 
-            var idParam = command.CreateParameter();
-            idParam.ParameterName = "@id";
-            idParam.Value = sessionId;
-            command.Parameters.Add(idParam);
+            using (IDbCommand deleteLevelsCommand = connection.CreateCommand())
+            {
+                deleteLevelsCommand.CommandText = "DELETE FROM Levels WHERE sessionID = @id";
 
-            // Execute the insert/update/delete command that does not return results
-            command.ExecuteNonQuery();
-            Debug.Log("Session deleted from database.");
+                var levelsIdParam = deleteLevelsCommand.CreateParameter();
+                levelsIdParam.ParameterName = "@id";
+                levelsIdParam.Value = sessionId;
+                deleteLevelsCommand.Parameters.Add(levelsIdParam);
+
+                deleteLevelsCommand.ExecuteNonQuery();
+                Debug.Log("Related levels deleted.");
+            }
+
+            //Delete the session itself
+
+            using (IDbCommand deleteSessionCommand = connection.CreateCommand())
+            {
+                deleteSessionCommand.CommandText = "DELETE FROM Sessions WHERE sessionID = @id";
+
+                var sessionIdParam = deleteSessionCommand.CreateParameter();
+                sessionIdParam.ParameterName = "@id";
+                sessionIdParam.Value = sessionId;
+                deleteSessionCommand.Parameters.Add(sessionIdParam);
+
+                deleteSessionCommand.ExecuteNonQuery();
+                Debug.Log("Session deleted.");
+            }
         }
     }
+
+
 
     public void UpdateSession(int sessionId, string newName)
     {
