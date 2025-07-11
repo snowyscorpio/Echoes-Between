@@ -72,21 +72,31 @@ public class AddSessionPopupController : MonoBehaviour
             return;
         }
 
-        DataTable existingSessions = DatabaseManager.Instance.GetAllSessions();
-        foreach (DataRow row in existingSessions.Rows)
+        try
         {
-            string existingName = row["sessionName"].ToString();
-            if (string.Equals(existingName, sessionName, System.StringComparison.OrdinalIgnoreCase))
+            DataTable existingSessions = DatabaseManager.Instance.GetAllSessions();
+            foreach (DataRow row in existingSessions.Rows)
             {
-                errorText.text = $"Session name already exists. Try adding a number (e.g., '{sessionName}2')";
-                return;
+                string existingName = row["sessionName"].ToString();
+                if (string.Equals(existingName, sessionName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    errorText.text = $"Session name already exists. Try adding a number (e.g., '{sessionName}2')";
+                    return;
+                }
             }
-        }
 
-        errorText.text = "";
-        sessionListController.AddSessionFromPopup(sessionName);
-        addSessionPanel.SetActive(false);
+            errorText.text = "";
+            sessionListController.AddSessionFromPopup(sessionName);
+            addSessionPanel.SetActive(false);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError("[AddSession] Failed to add session: " + ex.Message);
+            addSessionPanel.SetActive(false);
+            SessionErrorPopupController.Show("Database is unavailable.\nPlease try again later.");
+        }
     }
+
 
     private void OnInputChanged(string input)
     {

@@ -13,7 +13,7 @@ public class GameManager : MonoBehaviour
         set => currentSessionId = value;
     }
 
-    public Vector2? LastSavedPositionForSession { get; private set; }
+    public Vector2? LastSavedPositionForSession { get; set; }
     public int LevelDifficulty { get; private set; }
     public string LastSceneBeforeOptions { get; set; }
     public Vector2? PendingStartPosition { get; set; }

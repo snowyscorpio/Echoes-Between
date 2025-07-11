@@ -152,6 +152,7 @@ public class OptionMenu : MonoBehaviour
 
     public void SaveSettingsToDB()
     {
+
         string resolutionStr = availableResolutions[resolutionDropdown.value].width + "x" + availableResolutions[resolutionDropdown.value].height;
         string graphicsStr = QualitySettings.names[graphicsDropdown.value];
         int volumeInt = Mathf.RoundToInt(volumeSlider.value * 100);

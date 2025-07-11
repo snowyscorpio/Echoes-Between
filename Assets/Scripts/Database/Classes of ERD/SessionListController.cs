@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Data;
 using UnityEngine.SceneManagement;
+
 
 public class SessionListController : MonoBehaviour
 {
@@ -205,28 +207,45 @@ public class SessionListController : MonoBehaviour
 
         if (DatabaseManager.Instance == null || GameManager.Instance == null)
         {
-            Debug.LogError("Cannot load session missing DatabaseManager or GameManager");
+            Debug.LogError("Cannot load session: missing DatabaseManager or GameManager");
+            SessionErrorPopupController.Show("Database is unavailable.");
             return;
         }
 
         GameManager.Instance.CurrentSessionID = sessionId;
 
-        var sessionData = DatabaseManager.Instance.LoadSavedSessionData(sessionId);
-
-        if (sessionData.HasValue)
+        try
         {
-            GameManager.Instance.ApplyLoadedSessionData(sessionData.Value.position, sessionData.Value.levelDifficulty);
+            var sessionData = DatabaseManager.Instance.LoadSavedSessionData(sessionId);
 
-            Debug.Log("[LoadSession] Loaded saved data. Going to Level_" + sessionData.Value.levelDifficulty);
-            LoadingManager.SceneToLoad = "Level_" + sessionData.Value.levelDifficulty;
+            if (sessionData.HasValue)
+            {
+                GameManager.Instance.ApplyLoadedSessionData(sessionData.Value.position, sessionData.Value.levelDifficulty);
+                Debug.Log("[LoadSession] Loaded saved data. Going to Level_" + sessionData.Value.levelDifficulty);
+                LoadingManager.SceneToLoad = "Level_" + sessionData.Value.levelDifficulty;
+            }
+            else
+            {
+                Debug.Log("[LoadSession] No saved data found. Starting from Cutscene.");
+                LoadingManager.SceneToLoad = "Cutscene";
+            }
+
+            SceneManager.LoadScene("Loading");
         }
-        else
+
+        catch (Exception ex)
         {
-            Debug.Log("[LoadSession] No saved data found. Starting from Cutscene.");
-            LoadingManager.SceneToLoad = "Cutscene";
-        }
+            Debug.LogError("[LoadSession] Error loading session: " + ex.Message);
 
-        SceneManager.LoadScene("Loading");
+            if (ex.Message.ToLower().Contains("database") || ex.Message.ToLower().Contains("sqlite"))
+            {
+                SessionErrorPopupController.Show("Database is unavailable.\nPlease try again later.");
+            }
+            else
+            {
+                SessionErrorPopupController.Show("Failed to load session.\nChoose a different session.");
+            }
+        }
     }
 
 }

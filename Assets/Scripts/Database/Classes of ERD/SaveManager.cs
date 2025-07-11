@@ -122,63 +122,70 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
-        GameManager.Instance.SetLevelDifficultyFromScene();
-
-        int sessionId = GameManager.Instance.CurrentSessionID;
-        int difficulty = GameManager.Instance.LevelDifficulty;
-
-        if (sessionId <= 0)
+        try
         {
-            Debug.LogWarning("Invalid session ID: " + sessionId + ". Cannot save.");
-            return;
+            GameManager.Instance.SetLevelDifficultyFromScene();
+            int sessionId = GameManager.Instance.CurrentSessionID;
+            int difficulty = GameManager.Instance.LevelDifficulty;
+
+            if (sessionId <= 0)
+            {
+                Debug.LogWarning("Invalid session ID: " + sessionId + ". Cannot save.");
+                return;
+            }
+
+            string positionStr = position.x.ToString("F2") + "," + position.y.ToString("F2");
+            int hasSeen = GameManager.Instance.HasSeenDialogue ? 1 : 0;
+
+            using (IDbConnection connection = DatabaseManager.Instance.GetConnection())
+            {
+                IDbCommand checkCmd = connection.CreateCommand();
+                checkCmd.CommandText = "SELECT COUNT(*) FROM Levels WHERE sessionID = @sessionId";
+                checkCmd.Parameters.Add(CreateParam(checkCmd, "@sessionId", sessionId));
+
+                int existingCount = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+                if (existingCount > 0)
+                {
+                    IDbCommand updateCmd = connection.CreateCommand();
+                    updateCmd.CommandText = @"
+                    UPDATE Levels 
+                    SET positionInLevel = @position, levelDifficulty = @difficulty, hasSeenDialogue = @hasSeen
+                    WHERE sessionID = @sessionId";
+
+                    updateCmd.Parameters.Add(CreateParam(updateCmd, "@position", positionStr));
+                    updateCmd.Parameters.Add(CreateParam(updateCmd, "@difficulty", difficulty));
+                    updateCmd.Parameters.Add(CreateParam(updateCmd, "@hasSeen", hasSeen));
+                    updateCmd.Parameters.Add(CreateParam(updateCmd, "@sessionId", sessionId));
+
+                    updateCmd.ExecuteNonQuery();
+                    Debug.Log($"[SaveManager] {(isManual ? "Manual" : "Auto")} save UPDATED row.");
+                }
+                else
+                {
+                    IDbCommand insertCmd = connection.CreateCommand();
+                    insertCmd.CommandText = @"
+                    INSERT INTO Levels (positionInLevel, levelDifficulty, sessionID, hasSeenDialogue)
+                    VALUES (@position, @difficulty, @sessionId, @hasSeen)";
+
+                    insertCmd.Parameters.Add(CreateParam(insertCmd, "@position", positionStr));
+                    insertCmd.Parameters.Add(CreateParam(insertCmd, "@difficulty", difficulty));
+                    insertCmd.Parameters.Add(CreateParam(insertCmd, "@sessionId", sessionId));
+                    insertCmd.Parameters.Add(CreateParam(insertCmd, "@hasSeen", hasSeen));
+
+                    insertCmd.ExecuteNonQuery();
+                    Debug.Log($"[SaveManager] {(isManual ? "Manual" : "Auto")} save INSERTED row.");
+                }
+            }
         }
-
-        string positionStr = position.x.ToString("F2") + "," + position.y.ToString("F2");
-        int hasSeen = GameManager.Instance.HasSeenDialogue ? 1 : 0;
-
-
-        using (IDbConnection connection = DatabaseManager.Instance.GetConnection())
+        catch (Exception e)
         {
-            IDbCommand checkCmd = connection.CreateCommand();
-            checkCmd.CommandText = "SELECT COUNT(*) FROM Levels WHERE sessionID = @sessionId";
-            checkCmd.Parameters.Add(CreateParam(checkCmd, "@sessionId", sessionId));
+            Debug.LogError("[SaveManager] Error saving level: " + e.Message);
+            SessionErrorPopupController.Show("Storage error. Delete sessions?");
 
-            int existingCount = Convert.ToInt32(checkCmd.ExecuteScalar());
-
-            if (existingCount > 0)
-            {
-                IDbCommand updateCmd = connection.CreateCommand();
-                updateCmd.CommandText = @"
-                UPDATE Levels 
-                SET positionInLevel = @position, levelDifficulty = @difficulty, hasSeenDialogue = @hasSeen
-                WHERE sessionID = @sessionId";
-
-
-                updateCmd.Parameters.Add(CreateParam(updateCmd, "@position", positionStr));
-                updateCmd.Parameters.Add(CreateParam(updateCmd, "@difficulty", difficulty));
-                updateCmd.Parameters.Add(CreateParam(updateCmd, "@hasSeen", hasSeen));
-                updateCmd.Parameters.Add(CreateParam(updateCmd, "@sessionId", sessionId));
-
-                updateCmd.ExecuteNonQuery();
-                Debug.Log($"[SaveManager] {(isManual ? "Manual" : "Auto")} save UPDATED row.");
-            }
-            else
-            {
-                IDbCommand insertCmd = connection.CreateCommand();
-                insertCmd.CommandText = @"
-                INSERT INTO Levels (positionInLevel, levelDifficulty, sessionID, hasSeenDialogue)
-                VALUES (@position, @difficulty, @sessionId, @hasSeen)";
-
-                insertCmd.Parameters.Add(CreateParam(insertCmd, "@position", positionStr));
-                insertCmd.Parameters.Add(CreateParam(insertCmd, "@difficulty", difficulty));
-                insertCmd.Parameters.Add(CreateParam(insertCmd, "@sessionId", sessionId));
-                insertCmd.Parameters.Add(CreateParam(insertCmd, "@hasSeen", hasSeen));
-
-                insertCmd.ExecuteNonQuery();
-                Debug.Log($"[SaveManager] {(isManual ? "Manual" : "Auto")} save INSERTED row.");
-            }
         }
     }
+
 
     private static IDbDataParameter CreateParam(IDbCommand command, string name, object value)
     {
