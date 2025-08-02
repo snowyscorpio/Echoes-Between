@@ -43,16 +43,9 @@ public class PortalTrigger : MonoBehaviour
             // If we're not at the last level, move to the next one
             if (currentIndex >= 0 && currentIndex < levelSceneNames.Count - 1)
             {
-                // Get the name of the next level in the list
                 string nextScene = levelSceneNames[currentIndex + 1];
-
-                // Clear the last saved player position to reset spawn point
                 GameManager.Instance.LastSavedPositionForSession = null;
-
-                // Set the name of the scene to load in the loading manager
                 LoadingManager.SceneToLoad = nextScene;
-
-                // Load the loading scene, which will eventually transition to the next level
                 SceneManager.LoadScene("Loading");
             }
             else

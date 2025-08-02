@@ -4,36 +4,54 @@ using System.Data.SQLite;
 using System;
 using System.IO;
 
+/// <summary>
+/// Contains position and difficulty info for a saved session.
+/// </summary>
 public struct SessionData
 {
     public Vector2 position;
     public int levelDifficulty;
 }
 
+/// <summary>
+/// Singleton manager responsible for all database interactions:
+/// session loading, session list querying, creating/updating/deleting sessions,
+/// and saving/loading global settings.
+/// </summary>
 public class DatabaseManager : MonoBehaviour
 {
-    private static DatabaseManager instance;
-    private string dbPath;
+    private static DatabaseManager instance; // Singleton instance
+    private string dbPath; // Connection string for the SQLite database
 
+    /// <summary>
+    /// Singleton accessor for external usage.
+    /// </summary>
     public static DatabaseManager Instance
     {
         get { return instance; }
     }
 
+    /// <summary>
+    /// Unity Awake lifecycle method. Sets up singleton and initializes DB.
+    /// </summary>
     private void Awake()
     {
         if (instance == null)
         {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-            InitializeDatabase();
+            instance = this; // Establish this as the global instance
+            DontDestroyOnLoad(gameObject); // Persist across scene loads
+            InitializeDatabase(); // Verify and set up path
         }
         else if (instance != this)
         {
-            Destroy(gameObject);
+            Destroy(gameObject); // Enforce single instance
         }
     }
 
+    /// <summary>
+    /// Validates existence of the database file and constructs the connection string.
+    /// Logs error if missing.
+    /// </summary>
     private void InitializeDatabase()
     {
         string fullPath = Path.Combine(Application.streamingAssetsPath, "GameDatabase.db");
@@ -44,18 +62,26 @@ public class DatabaseManager : MonoBehaviour
             return;
         }
 
-        dbPath = "Data Source=" + fullPath + ";Version=3;";
+        dbPath = "Data Source=" + fullPath + ";Version=3;"; // Build SQLite connection string
         Debug.Log("Database initialized: " + dbPath);
     }
 
+    /// <summary>
+    /// Opens and returns a new SQLiteConnection using the initialized path.
+    /// Caller is responsible for disposing the connection.
+    /// </summary>
     public SQLiteConnection GetConnection()
     {
         SQLiteConnection connection = new SQLiteConnection(dbPath);
-        connection.Open();
+        connection.Open(); // Open DB connection
         Debug.Log("Database connection opened.");
         return connection;
     }
 
+    /// <summary>
+    /// Loads the most recent saved session data (position and difficulty) for a given session ID.
+    /// Returns null if no valid data is found or parsing fails.
+    /// </summary>
     public SessionData? LoadSavedSessionData(int sessionId)
     {
         Debug.Log("Loading saved session data for session ID: " + sessionId);
@@ -63,7 +89,6 @@ public class DatabaseManager : MonoBehaviour
         {
             // SQL query to get the last saved level position and difficulty for given session ID
             string query = "SELECT positionInLevel, levelDifficulty FROM levels WHERE sessionId = @id ORDER BY levelID DESC LIMIT 1";
-
 
             using (var cmd = new SQLiteCommand(query, connection))
             {
@@ -93,14 +118,17 @@ public class DatabaseManager : MonoBehaviour
                                 levelDifficulty = level
                             };
                         }
-
                     }
                 }
             }
         }
+        // No valid saved session data available
         return null;
     }
 
+    /// <summary>
+    /// Retrieves all sessions from the database and returns them as a DataTable.
+    /// </summary>
     public DataTable GetAllSessions()
     {
         Debug.Log("Fetching all sessions from database...");
@@ -120,12 +148,15 @@ public class DatabaseManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Adds a new session record with the provided name and current timestamp.
+    /// </summary>
     public void AddSession(string name)
     {
         Debug.Log("Adding new session: " + name);
         using (IDbConnection connection = GetConnection())
         {
-            // Create command object to hold SQL query
+            // Create command object to hold SQL insert
             IDbCommand command = connection.CreateCommand();
             command.CommandText = "INSERT INTO Sessions (sessionName, dateOfLastSave) VALUES (@name, datetime('now'))";
 
@@ -135,14 +166,15 @@ public class DatabaseManager : MonoBehaviour
             nameParam.Value = name;
             command.Parameters.Add(nameParam);
 
-            // Execute the insert/update/delete command that does not return results
+            // Execute the insert command
             command.ExecuteNonQuery();
             Debug.Log("Session added to database.");
         }
     }
 
-
-    // Deletes a session and its related level saves from the database.
+    /// <summary>
+    /// Deletes a session and all associated level records from the database.
+    /// </summary>
     public void DeleteSession(int sessionId)
     {
         Debug.Log("Deleting session ID: " + sessionId);
@@ -150,8 +182,7 @@ public class DatabaseManager : MonoBehaviour
         // Open a connection to the database
         using (IDbConnection connection = GetConnection())
         {
-            //Delete related level saves
-
+            // Delete related level saves first to maintain referential clarity
             using (IDbCommand deleteLevelsCommand = connection.CreateCommand())
             {
                 deleteLevelsCommand.CommandText = "DELETE FROM Levels WHERE sessionID = @id";
@@ -165,8 +196,7 @@ public class DatabaseManager : MonoBehaviour
                 Debug.Log("Related levels deleted.");
             }
 
-            //Delete the session itself
-
+            // Delete the session entry itself
             using (IDbCommand deleteSessionCommand = connection.CreateCommand())
             {
                 deleteSessionCommand.CommandText = "DELETE FROM Sessions WHERE sessionID = @id";
@@ -182,79 +212,91 @@ public class DatabaseManager : MonoBehaviour
         }
     }
 
-
-
+    /// <summary>
+    /// Updates the name of an existing session.
+    /// </summary>
     public void UpdateSession(int sessionId, string newName)
     {
         Debug.Log("Updating session ID " + sessionId + " with new name: " + newName);
         using (IDbConnection connection = GetConnection())
         {
-            // Create command object to hold SQL query
+            // Create command object to hold SQL update
             IDbCommand command = connection.CreateCommand();
             command.CommandText = "UPDATE Sessions SET sessionName = @name WHERE sessionID = @id";
 
-            // Create a parameter to bind the session name into the SQL insert query
+            // Bind new name parameter
             var nameParam = command.CreateParameter();
             nameParam.ParameterName = "@name";
             nameParam.Value = newName;
             command.Parameters.Add(nameParam);
 
+            // Bind session ID parameter
             var idParam = command.CreateParameter();
             idParam.ParameterName = "@id";
             idParam.Value = sessionId;
             command.Parameters.Add(idParam);
 
-            // Execute the insert/update/delete command that does not return results
+            // Execute update
             command.ExecuteNonQuery();
             Debug.Log("Session name updated in database.");
         }
     }
 
+    /// <summary>
+    /// Overwrites existing settings with the provided resolution, graphics, and volume values.
+    /// </summary>
     public void SaveSettings(string resolution, string graphics, int volume)
     {
         Debug.Log("Saving settings: Resolution=" + resolution + ", Graphics=" + graphics + ", Volume=" + volume);
         using (IDbConnection connection = GetConnection())
         {
-            // Create command object to hold SQL query
+            // Prepare delete+insert SQL to replace settings atomically
             IDbCommand command = connection.CreateCommand();
             command.CommandText = @"
             DELETE FROM Settings;
             INSERT INTO Settings (resolution, graphics, volume)
             VALUES (@resolution, @graphics, @volume);";
 
+            // Bind resolution
             var resolutionParam = command.CreateParameter();
             resolutionParam.ParameterName = "@resolution";
             resolutionParam.Value = resolution;
             command.Parameters.Add(resolutionParam);
 
+            // Bind graphics
             var graphicsParam = command.CreateParameter();
             graphicsParam.ParameterName = "@graphics";
             graphicsParam.Value = graphics;
             command.Parameters.Add(graphicsParam);
 
+            // Bind volume
             var volumeParam = command.CreateParameter();
             volumeParam.ParameterName = "@volume";
             volumeParam.Value = volume;
             command.Parameters.Add(volumeParam);
 
-            // Execute the insert/update/delete command that does not return results
+            // Execute overwrite
             command.ExecuteNonQuery();
             Debug.Log("Settings saved to database.");
         }
     }
 
+    /// <summary>
+    /// Loads the saved interface/settings values (resolution, graphics, volume) from the database.
+    /// Returns null if no settings are stored.
+    /// </summary>
     public (string resolution, string graphics, int volume)? LoadSettings()
     {
         Debug.Log("Loading settings from database...");
         using (IDbConnection connection = GetConnection())
         {
-            // Create command object to hold SQL query
+            // Query the stored settings
             IDbCommand command = connection.CreateCommand();
             command.CommandText = "SELECT resolution, graphics, volume FROM Settings LIMIT 1";
 
             using (IDataReader reader = command.ExecuteReader())
             {
-                // Check if the query returned a row
+                // If data exists, extract it
                 if (reader.Read())
                 {
                     string resolution = reader.GetString(0);
@@ -267,7 +309,7 @@ public class DatabaseManager : MonoBehaviour
                 }
                 else
                 {
-                    Debug.LogWarning("No settings found in database.");
+                    Debug.LogWarning("No settings found in database."); // Nothing to return
                 }
             }
         }
