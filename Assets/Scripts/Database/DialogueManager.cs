@@ -321,20 +321,28 @@ public class DialogueManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Finalizes the dialogue: updates flags, hides UI, optionally shows end screen, and restores player control.
+    /// Finalizes the dialogue: saves session, updates flags in database, hides UI, and restores player control.
     /// </summary>
     void EndDialogue()
     {
-        isDialogueActive = false;                                 // Mark dialogue ended
-        IsDialogueActive = false;
+        isDialogueActive = false; // Mark dialogue as inactive
 
+        // Hide skip hint and stop blinking animation
         if (skipText != null) skipText.SetActive(false);
         if (blinkCoroutine != null) StopCoroutine(blinkCoroutine);
 
         int sessionId = GameManager.Instance.CurrentSessionID;
-        Debug.Log($"[EndDialogue] Trying to update hasSeenDialogue to 1 for sessionID={sessionId}");
+        Debug.Log($"[EndDialogue] Preparing to update hasSeenDialogue for sessionID={sessionId}");
 
-        // Update DB flag to indicate dialogue was seen
+        // Auto-save level before trying to update the Levels table (ensures sessionID exists)
+        if (GameManager.Instance != null)
+        {
+            Vector2 spawnPos = new Vector2(-4.75f, -2.04f); // Default fixed spawn position
+            SaveManager.SaveLevelAuto(spawnPos);            // Insert session row into Levels table
+            Debug.Log("[DialogueManager] Auto-saved fixed spawn before updating hasSeenDialogue.");
+        }
+
+        // Now attempt to update the hasSeenDialogue flag in the Levels table
         using (IDbConnection connection = DatabaseManager.Instance.GetConnection())
         {
             IDbCommand cmd = connection.CreateCommand();
@@ -357,31 +365,25 @@ public class DialogueManager : MonoBehaviour
             }
             else
             {
-                GameManager.Instance.HasSeenDialogue = true;      // Update in-memory flag
+                GameManager.Instance.HasSeenDialogue = true; // Update in-memory flag
                 Debug.Log("[EndDialogue] hasSeenDialogue is now set to 1 in GameManager.");
             }
         }
 
-        // If final level, show end screen animation
+        // If this is the final level, show the end screen and return to main menu
         if (GameManager.Instance.LevelDifficulty == 4)
         {
             StartCoroutine(ShowEndScreenAndReturn());
         }
         else
         {
-            // Otherwise, hide UI and re-enable player control
+            // Hide dialogue UI and re-enable player controls
             dialoguePanel.SetActive(false);
+            IsDialogueActive = false;
             EnablePlayer();
-
-            // Auto-save default spawn position after dialogue
-            if (GameManager.Instance != null)
-            {
-                Vector2 spawnPos = new Vector2(-4.75f, -2.04f);
-                SaveManager.SaveLevelAuto(spawnPos);
-                Debug.Log("[DialogueManager] Auto-saved fixed spawn after dialogue.");
-            }
         }
     }
+
 
     /// <summary>
     /// Displays the ending screen when dialogue concludes on the final level, then returns to session list.
@@ -444,8 +446,16 @@ public class DialogueManager : MonoBehaviour
     {
         var player = GameObject.FindGameObjectWithTag("Player");
         if (player?.GetComponent<PlayerMovement>() != null)
-            player.GetComponent<PlayerMovement>().enabled = true;  // Re-enable player controls
+        {
+            player.GetComponent<PlayerMovement>().enabled = true;
+            Debug.Log("PlayerMovement enabled after dialogue.");
+        }
+        else
+        {
+            Debug.LogWarning("Player or PlayerMovement not found.");
+        }
     }
+
 
     // Internal data class representing a character definition
     class CharacterData
